@@ -1,0 +1,10 @@
+target/
+.idea/
+.cursor/
+*.iml
+.DS_Store
+*.log
+.env
+application-local.yaml
+application-local.yml
+frontend/logs/
