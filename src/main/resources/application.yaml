@@ -1,16 +1,18 @@
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
 spring:
   application:
-    name: hmdp
+    name: token-pack-flash-sale
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: "${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true}"
     username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:}
+    password: "${MYSQL_PASSWORD:}"
   redis:
     host: ${REDIS_HOST:127.0.0.1}
     port: ${REDIS_PORT:6379}
+    password: "${REDIS_PASSWORD:}"
+    database: ${REDIS_DATABASE:0}
     lettuce:
       pool:
         max-active: 10
@@ -18,34 +20,59 @@ spring:
         min-idle: 1
         time-between-eviction-runs: 10s
   jackson:
-    default-property-inclusion: non_null # JSON处理时忽略非空字段
+    default-property-inclusion: non_null
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: your-group-id
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring:
-          json:
-            trusted:
-              packages: '*'
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+        max.block.ms: 5000
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 5000
+    consumer:
+      group-id: ${KAFKA_GROUP_ID:token-pack-orders}
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.value.default.type: com.hmdp.entity.VoucherOrder
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: com.hmdp.entity
+    listener:
+      auto-startup: ${KAFKA_LISTENER_ENABLED:true}
+      ack-mode: record
 
 mybatis-plus:
-  type-aliases-package: com.hmdp.entity # 别名扫描包
-
+  type-aliases-package: com.hmdp.entity
 
 logging:
   level:
-    com.hmdp: debug
-  pattern:
-    dateformat: mm:ss.SSS
+    com.hmdp: ${APP_LOG_LEVEL:info}
 
-# 【秒杀优惠券信息多级缓存改造】本地缓存的配置项(刷新时间、过期时间)、Redis缓存的过期时间
+kafka:
+  backoff:
+    interval: 1000
+    max_failure: 3
+
 hmdp:
+  kafka:
+    order-topic: ${KAFKA_ORDER_TOPIC:seckill-voucher-order}
   cache:
     voucher-list:
-      mode: mysql
+      mode: ${TOKEN_PACK_CACHE_MODE:mysql}
       refresh-after-write: 5s
       expire-after-write: 10m
       redis-ttl: 30m
+  # The legacy consultant runs only with the explicit local reference profile.
+  ai:
+    base-url: ${AI_BASE_URL:https://api.deepseek.com/v1}
+    api-key: "${AI_API_KEY:}"
+    model-name: ${AI_MODEL_NAME:deepseek-chat}
+    log-requests: false
+    log-responses: false

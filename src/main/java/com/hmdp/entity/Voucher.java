@@ -12,9 +12,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 
- * </p>
+ * Token-pack catalog entry backed by the legacy voucher table.
  *
  * @author 虎哥
  * @since 2021-12-22
@@ -62,6 +60,9 @@ public class Voucher implements Serializable {
      * 抵扣金额
      */
     private Long actualValue;
+
+    /** Number of model tokens in one pack. Null identifies legacy coupon records. */
+    private Long tokenUnits;
 
     /**
      * 优惠券类型

@@ -9,14 +9,12 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 
 /**
- * <p>
- *  前端控制器
- * </p>
+ * Serves the token-pack catalog and retains the historical voucher endpoints.
  *
  * @author 虎哥
  */
 @RestController
-@RequestMapping("/voucher")
+@RequestMapping({"/token-packs", "/voucher"})
 public class VoucherController {
 
     @Resource

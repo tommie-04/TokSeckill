@@ -1,123 +1,92 @@
 <div align="center">
 
-# CityPerks
+# TokenPack Flash Sale
 
-[中文](README.md) | **English**
+[![中文](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87-1d624b)](README.md)
+[![English](https://img.shields.io/badge/README-English-2563eb)](README.en.md)
 
-### Local discovery and flash-sale vouchers
+**A flash-sale platform for LLM token packs**
 
-Explore merchants, caching, and asynchronous order processing through a Java backend learning project.
+Browse text, reasoning, and multimodal model packs, reserve one during a campaign, and check your order status.
 
 [![Build](https://github.com/tommie-04/CityPerks/actions/workflows/build.yml/badge.svg)](https://github.com/tommie-04/CityPerks/actions/workflows/build.yml)
-![Java](https://img.shields.io/badge/Java-8%2B-ED8B00?logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-2.3.12-6DB33F?logo=springboot&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
+![Java 17](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot 2.7.18](https://img.shields.io/badge/Spring_Boot-2.7.18-6DB33F?logo=springboot&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-Lua-DC382D?logo=redis&logoColor=white)
 ![Kafka](https://img.shields.io/badge/Apache_Kafka-231F20?logo=apachekafka&logoColor=white)
-![Caffeine](https://img.shields.io/badge/Caffeine-Local_Cache-795548)
-![Lua](https://img.shields.io/badge/Lua-2C2D72?logo=lua&logoColor=white)
-![MyBatis Plus](https://img.shields.io/badge/MyBatis--Plus-3.4.3-blue)
+![Caffeine](https://img.shields.io/badge/Caffeine-L1_Cache-795548)
+![MySQL](https://img.shields.io/badge/MySQL-MyBatis--Plus-4479A1?logo=mysql&logoColor=white)
 
-[Overview](#overview) · [Technology](#technology) · [Getting started](#getting-started) · [Learning guide](#learning-guide) · [Implementation status](#implementation-status)
+[Architecture](docs/architecture.en.md) · [Quick start](#quick-start) · [Learning and interviews](docs/learning-guide.md) · [Vue full-stack plan](docs/architecture.en.md#vue-full-stack-plan)
 
 </div>
 
-## Overview
+## How it works
 
-CityPerks is a learning project based on the HeiMa DianPing course and accompanying extension materials. It covers merchant discovery and voucher flash sales, with examples of caching, concurrency control and rate limiting. The repository contains reference implementations and work in progress, with attribution to the original course and extension materials below.
+- **Browse packs.** The catalog shows the model category, token allowance, price, and sale window. It can read from MySQL directly, from Redis with MySQL fallback, or through Caffeine → Redis → MySQL.
+- **Reserve a pack.** A Redis Lua script verifies the sale window, available inventory, and one-pack-per-user rule, then reserves one unit atomically. The API returns an order ID upon Kafka broker acknowledgment.
+- **Create the order.** The Kafka consumer inserts the order and decrements durable stock in one MySQL transaction. The order primary key and user/pack unique constraint support idempotent processing. A signed-in user can check whether their order has been created.
 
-```mermaid
-flowchart TD
-    Browser --> Nginx["Nginx :8080"] --> Web[Spring MVC and interceptors]
-    Web --> Controller --> Service
-    Service --> Caffeine[Caffeine local cache] --> Redis
-    Service --> Mapper[MyBatis-Plus] --> MySQL[(MySQL)]
-    Redis --> Mapper
-    Service -. "Lua eligibility and stock reservation" .-> Redis
-    Service -. "async order example" .-> Kafka
-    Kafka -. "consumer requires completion" .-> Consumer --> Mapper
-```
+The demo covers the pack catalog, reservation, and order creation. Payment, real model-credit fulfillment, order expiry, recovery of failed events, and token-pack tools for the assistant are future work.
 
-## Technology
+| Module | Code entry point |
+| --- | --- |
+| Catalog and two-level caching | [VoucherController](src/main/java/com/hmdp/controller/VoucherController.java) → [VoucherListCacheService](src/main/java/com/hmdp/service/cache/VoucherListCacheService.java) |
+| Flash sale and order lookup | [VoucherOrderController](src/main/java/com/hmdp/controller/VoucherOrderController.java) → [VoucherOrderServiceImpl](src/main/java/com/hmdp/service/impl/VoucherOrderServiceImpl.java) → [seckill.lua](src/main/resources/seckill.lua) |
+| Consumer, retries, and transaction | [SeckillVoucherConsumer](src/main/java/com/hmdp/consumer/SeckillVoucherConsumer.java) · [KafkaConfig](src/main/java/com/hmdp/config/KafkaConfig.java) |
+| Login and rate limiting | [MvcConfig](src/main/java/com/hmdp/config/MvcConfig.java) · [limiter/](src/main/java/com/hmdp/limiter/) |
+| Course assistant reference | [ai/](src/main/java/com/hmdp/ai/) contains a LangChain4j and Redis chat history example, disabled by default |
 
-| Area | Tools | Entry points |
-| --- | --- | --- |
-| Login and sessions | Redis Hash, tokens, interceptors, ThreadLocal | `UserServiceImpl`, `RefreshTokenInterceptor`, `UserHolder` |
-| Merchant cache | Empty-value caching, logical expiry, background rebuild | `ShopServiceImpl`, `CacheClient` |
-| Multilevel cache | Caffeine, Redis, MySQL | `VoucherListCacheService` |
-| Flash-sale eligibility | Redis String and Set, Lua | `VoucherOrderServiceImpl`, `seckill.lua` |
-| Asynchronous orders | Kafka producer and consumer example | `KafkaConfig`, `SeckillVoucherConsumer` |
-| Distributed locking | Redis, Lua, Redisson | `SimpleRedisLock`, `unlock.lua`, `RedissonConfig` |
-| Rate limiting | Annotation, AOP, Redis sliding window | `RateLimiter`, `RateLimiterAspect`, `limiter.lua` |
-| Persistence | MyBatis-Plus, MySQL | `mapper/`, `entity/`, `service/impl/` |
+## Quick start
 
-Voucher-list queries support `mysql`, `redis` and `caffeine` modes via `hmdp.cache.voucher-list.mode`; the default is `mysql`.
-
-## Project layout
-
-```text
-src/main/java/com/hmdp/
-├── controller/        HTTP endpoints
-├── service/impl/      business logic
-├── service/cache/     voucher-list multilevel cache
-├── consumer/          Kafka consumer example
-├── limiter/           rate-limiting annotation and aspect
-├── config/            application and middleware configuration
-├── mapper/           database access
-├── entity/ and dto/   data models and response objects
-└── utils/            caching, locks, IDs and user context
-src/main/resources/    application configuration, SQL and Lua scripts
-src/test/              course exercises requiring external services
-frontend/              course static pages and Nginx configuration
-docs/                  learning notes and improvement roadmap
-```
-
-## Getting started
-
-Use JDK 8 or a compatible version, Maven 3.6+, MySQL, Redis and Nginx. The async order example also requires Kafka. Create a dedicated learning database: the SQL script drops and recreates tables with matching names.
+Install JDK 17, Maven 3.6+, MySQL, Redis, Kafka, and Nginx. Use a fresh local database. The base SQL recreates the training tables in that database.
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS hmdp CHARACTER SET utf8mb4;"
+mysql -u root -p -e "CREATE DATABASE hmdp CHARACTER SET utf8mb4;"
 mysql -u root -p hmdp < src/main/resources/db/hmdp.sql
+mysql -u root -p hmdp < src/main/resources/db/token-packs.sql
+mysql -u root -p hmdp < src/main/resources/db/token-pack-demo.sql
+```
+
+For an existing learning database, back it up and apply `token-packs.sql` once. If the unique index fails to build, check for duplicate `(user_id, voucher_id)` pairs. Demo fixtures use provider and pack IDs 101–103 and open a 30-day campaign upon import.
+
+After starting MySQL, Redis, and Kafka, create the order topic with the Kafka CLI. This example uses a single broker.
+
+```bash
+kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --if-not-exists \
+  --topic seckill-voucher-order --partitions 3 --replication-factor 1
+```
+
+Build and start the backend. The settings below enable the Caffeine mode and demo login. The training implementation writes the verification code to the local DEBUG log.
+
+```bash
 export MYSQL_USER=root
-export MYSQL_PASSWORD='your-local-password'
-export REDIS_HOST=127.0.0.1
-export REDIS_PORT=6379
-export KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092
+export MYSQL_PASSWORD='your-local-mysql-password'
+export REDIS_PASSWORD='your-local-redis-password'
+export TOKEN_PACK_CACHE_MODE=caffeine
+export APP_LOG_LEVEL=debug
+./scripts/warm-token-pack.sh 101 102 103
 mvn -DskipTests package
 java -jar target/hm-dianping-0.0.1-SNAPSHOT.jar
 ```
 
-The backend listens on port 8081. The supplied `RedissonConfig` separately hardcodes `127.0.0.1:6379`; adjust it if your Redis requires authentication or runs elsewhere. The Kafka consumer example requires further work before end-to-end order processing.
+Leave `REDIS_PASSWORD` empty if Redis does not require a password. The backend defaults to port `8081`, Redis DB 0 at `127.0.0.1:6379`, Kafka at `127.0.0.1:9092`, and the `mysql` catalog mode. See [application.yaml](src/main/resources/application.yaml). Match the warmup script's MySQL and Redis settings to the backend. The script sets missing stock keys and updates sale windows. Use a separate Redis database for the demo to isolate any flash-sale state from older versions.
 
-To serve the included course frontend:
+From the repository root in a second terminal, start Nginx.
 
 ```bash
 mkdir -p frontend/logs
 nginx -p "$PWD/frontend/" -c conf/nginx.conf
 ```
 
-Open <http://127.0.0.1:8080/>. Before testing uploads, change the course Windows path in `SystemConstants.IMAGE_UPLOAD_DIR` to the absolute path of `frontend/html/hmdp/imgs`.
+Open the [local catalog](http://127.0.0.1:8080/). Choose a pack, sign in, submit the reservation, and refresh the order state. Displayed stock is a snapshot. The Redis Lua script checks availability when users submit their requests.
 
-## Learning guide
+## Implementation status and roadmap
 
-1. **Merchant caching:** `ShopController → ShopServiceImpl → CacheClient`.
-2. **Multilevel caching:** `VoucherController → VoucherServiceImpl → VoucherListCacheService`.
-3. **Flash sales:** `VoucherOrderController → VoucherOrderServiceImpl → seckill.lua → Kafka → SeckillVoucherConsumer`.
-4. **Concurrency:** conditional stock updates, lock ownership, Lua unlock, transaction boundaries and idempotency.
-5. **Rate limiting:** `@RateLimiter → RateLimiterAspect → limiter.lua`.
+The Kafka listener commits offsets after each record is handled. It retries failures up to three times at one-second intervals and logs exhausted records. The Redis reservation, Kafka publication, and MySQL transaction span separate systems. Uncertain publication or exhausted retries leave reservations for reconciliation. Durable recovery, replay, and compensation are future work.
 
-The existing [learning notes](docs/learning-guide.md) are in Chinese.
+The learning order is **Caffeine and Guava → Kafka acknowledgments, retries, and idempotency → Vue 3 frontend → Function Calling**. The course assistant is available under a local reference profile. Future token-pack tools start with read-only catalog queries. [Learning and interview guide, in Chinese](docs/learning-guide.md)
 
-## Implementation status
+## Credits
 
-The project was packaged locally and in GitHub Actions with `mvn -DskipTests package`. Integration and concurrency tests were not run.
-
-- The Kafka listener and custom consumer factory are commented out; the producer sends a string while the consumer expects an order object. Serialization must be unified.
-- Message delivery failure, transaction boundaries, uniqueness, duplicate consumption and Redis reservation compensation need further work.
-- Multilevel caching and rate limiting have example implementations and require functional and load testing.
-- AI support, automatic order cancellation, payment-versus-cancellation concurrency and MQ-based cache invalidation compensation are future work, not complete features in this source.
-
-## Attribution
-
-The base business code and frontend come from the [HeiMa Redis course](https://www.bilibili.com/video/BV1cr4y1671t) and [HeiMa DianPing starter repository](https://github.com/cs001020/hmdp). The extension reference comes from the supplied [Yuque learning document](https://www.yuque.com/kdoxioc/qp0wtr/zvp8tfp6sunsglpt) and its project attachment. Original author comments are retained. No repository-wide MIT or other license is asserted here.
+Based on the [Heima Redis course](https://www.bilibili.com/video/BV1cr4y1671t), its [base code](https://github.com/cs001020/hmdp), and the [extended study materials](https://www.yuque.com/kdoxioc/qp0wtr/zvp8tfp6sunsglpt). Original author attribution is preserved in the source. The repository retains its historical name, CityPerks.

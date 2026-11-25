@@ -17,18 +17,21 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 登录拦截器
+        // Require login for orders and catalog writes.
         registry.addInterceptor(new LoginInterceptor())
                 .excludePathPatterns(
                         "/shop/**",
-                        "/voucher/**",
+                        "/voucher/list/**",
+                        "/token-packs/list/**",
                         "/shop-type/**",
                         "/upload/**",
                         "/blog/hot",
                         "/user/code",
-                        "/user/login"
+                        "/user/login",
+                        "/chat",
+                        "/consultant.html"
                 ).order(1);
-        // token刷新的拦截器
+        // Rehydrate the current user before the login check runs.
         registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate)).addPathPatterns("/**").order(0);
     }
 }

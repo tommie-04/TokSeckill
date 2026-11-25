@@ -3,18 +3,25 @@ package com.hmdp.config;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.redisson.config.SingleServerConfig;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
+/** Shares the Spring Redis connection settings with the lock examples. */
 @Configuration
 public class RedissonConfig {
 
-    @Bean
-    public RedissonClient redissonClient(){
-        // 配置
+    @Bean(destroyMethod = "shutdown")
+    public RedissonClient redissonClient(RedisProperties redis) {
         Config config = new Config();
-        config.useSingleServer().setAddress("redis://127.0.0.1:6379");
-        // 创建RedissonClient对象
+        SingleServerConfig server = config.useSingleServer()
+                .setAddress("redis://" + redis.getHost() + ":" + redis.getPort())
+                .setDatabase(redis.getDatabase());
+        if (StringUtils.hasText(redis.getPassword())) {
+            server.setPassword(redis.getPassword());
+        }
         return Redisson.create(config);
     }
 }

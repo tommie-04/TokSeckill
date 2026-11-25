@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hmdp.utils.RedisConstants.CACHE_VOUCHER_LIST_KEY;
 
+/** Loads token-pack display metadata through the selected cache path. Inventory is checked by Lua. */
 @Slf4j
 @Service
 public class VoucherListCacheService {
@@ -35,7 +36,7 @@ public class VoucherListCacheService {
     @Resource
     private VoucherCacheProperties cacheProperties;
 
-    // 1. 【秒杀优惠券信息多级缓存改造】caffeine缓存的定义, key是shopId, value是优惠券列表的json字符串
+    // L1 stores the list of packs per provider in this JVM.
     private LoadingCache<Long, List<Voucher>> voucherListCache;
 
     // 2. 【秒杀优惠券信息多级缓存改造】caffeine缓存的初始化,会在项目启动时调用
@@ -96,7 +97,7 @@ public class VoucherListCacheService {
         List<Voucher> vouchers = loadFromDb(shopId);
 
         if(CollectionUtil.isNotEmpty(vouchers)) {
-            // 3) MySQL中数据不为空才写回 Redis, 避免写入空数据
+            // Cache non-empty catalog results in shared Redis.
             long ttlMillis = cacheProperties.getRedisTtl().toMillis();
             stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(vouchers), ttlMillis, TimeUnit.MILLISECONDS);
         }

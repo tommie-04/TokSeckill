@@ -1,0 +1,3 @@
+# The course consultant uses demo data and is intended for direct local review.
+server:
+  address: 127.0.0.1

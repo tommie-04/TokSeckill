@@ -1,0 +1,57 @@
+:root {
+  color: #172d25;
+  background: #f1f5ef;
+  font: 16px/1.55 system-ui, sans-serif;
+}
+
+[v-cloak] { display: none; }
+body { margin: 0; }
+
+.header, main {
+  max-width: 1100px;
+  padding: 1.25rem clamp(1rem, 5vw, 3rem);
+  margin: auto;
+}
+
+.header { display: flex; justify-content: space-between; align-items: center; }
+a { color: #1d624b; }
+.brand { color: inherit; font-size: 1.25rem; font-weight: 800; text-decoration: none; }
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.15; margin: 1rem 0; }
+h2 { font-size: 1.35rem; margin: 0; }
+.intro, .note { color: #445d50; }
+
+.packs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.pack, .result {
+  background: #fff;
+  border: 1px solid #d5e1d7;
+  padding: 1.4rem;
+  border-radius: .9rem;
+}
+
+.pack { display: flex; flex-direction: column; }
+.pack button { margin-top: auto; align-self: start; }
+.provider { color: #1d624b; font-weight: 650; margin-top: 0; }
+.units { font-size: 1.8rem; font-weight: 750; margin: .5rem 0 0; }
+.units span, del { color: #536b5e; font-size: .95rem; font-weight: 400; }
+.price { font-size: 1.2rem; font-weight: 700; margin: .5rem 0 0; }
+.price del { margin-left: .35rem; }
+
+button {
+  border: 1px solid #1d624b;
+  background: #1d624b;
+  color: #fff;
+  font: inherit;
+  padding: .55rem .9rem;
+  border-radius: .5rem;
+  cursor: pointer;
+}
+
+button.secondary { background: transparent; color: #1d624b; }
+button:disabled { opacity: .65; cursor: default; }
+.note { font-size: .9rem; }

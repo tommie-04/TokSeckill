@@ -1,7 +1,5 @@
 package com.hmdp.service.impl;
 
-// Flash-sale entry point: run Redis eligibility checks, then publish an order message. The consumer flow is still an example.
-
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.VoucherOrder;
@@ -11,22 +9,25 @@ import com.hmdp.service.IVoucherOrderService;
 import com.hmdp.utils.RedisIdWorker;
 import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Collections;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import static com.hmdp.utils.RedisConstants.*;
 
 /**
- * <p>
- * 服务实现类
- * </p>
+ * Reserves one pack in Redis before Kafka submission. The consumer persists the order and
+ * deducts durable stock in a separate database transaction.
  *
  * @author 虎哥
  * @since 2021-12-22
@@ -35,86 +36,88 @@ import java.util.Collections;
 @Service
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
 
+    private static final DefaultRedisScript<Long> SECKILL_SCRIPT =
+            new DefaultRedisScript<>();
+
+    static {
+        SECKILL_SCRIPT.setLocation(new ClassPathResource("seckill.lua"));
+        SECKILL_SCRIPT.setResultType(Long.class);
+    }
+
     @Resource
     private ISeckillVoucherService seckillVoucherService;
     @Resource
     private RedisIdWorker redisIdWorker;
     @Resource
-    private RedissonClient redissonClient;
-    @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private KafkaTemplate<String, Object> kafkaTemplate;
 
-    private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
-
-    static {
-        SECKILL_SCRIPT = new DefaultRedisScript<>();
-        SECKILL_SCRIPT.setLocation(new ClassPathResource("seckill.lua"));
-        SECKILL_SCRIPT.setResultType(Long.class);
-    }
+    @Value("${hmdp.kafka.order-topic}")
+    private String orderTopic;
 
     @Override
     public Result seckillVoucher(Long voucherId) {
         Long userId = UserHolder.getUser().getId();
         long orderId = redisIdWorker.nextId("order");
-        // 1.执行lua脚本
-        Long result = stringRedisTemplate.execute(
-                SECKILL_SCRIPT,
-                Collections.emptyList(),
-                voucherId.toString(), userId.toString(), String.valueOf(orderId)
-        );
-        int r = result.intValue();
-        // 2.判断结果
-        if(result == 1){
-            return Result.fail("库存不足");
+        Long result = stringRedisTemplate.execute(SECKILL_SCRIPT,
+                List.of(SECKILL_STOCK_KEY + voucherId, SECKILL_ORDER_KEY + voucherId, SECKILL_WINDOW_KEY + voucherId),
+                userId.toString(), Long.toString(Instant.now().getEpochSecond()));
+        if (result == null) {
+            return Result.fail("暂时无法确认秒杀资格");
         }
-        if(result == 2){
-            return Result.fail("重复下单");
+        switch (result.intValue()) {
+            case 1: return Result.fail("Token 包库存不足");
+            case 2: return Result.fail("该 Token 包已申请过");
+            case 3: return Result.fail("活动未开放或已结束");
+            case 0: break;
+            default: throw new IllegalStateException("Unexpected eligibility response: " + result);
         }
-        // 有购买资格
-        VoucherOrder voucherOrder = new VoucherOrder();
-        voucherOrder.setId(orderId);    // 订单ID
-        voucherOrder.setUserId(userId); // 用户ID
-        voucherOrder.setVoucherId(voucherId); // 优惠券ID
 
-        // 3.指定Topic发送Kafka消息  【秒杀链路消息队列使用】-2
-        kafkaTemplate.send("seckill-voucher-order", voucherOrder.toString());
-
-        // 4.返回订单id
-        return Result.ok(orderId);
+        VoucherOrder order = new VoucherOrder().setId(orderId).setUserId(userId).setVoucherId(voucherId);
+        try {
+            kafkaTemplate.send(orderTopic, Long.toString(orderId), order).get();
+            // Serialize the ID as a string so JavaScript retains all 64 bits.
+            return Result.ok(Long.toString(orderId));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for order admission, orderId={}", orderId, e);
+        } catch (ExecutionException | RuntimeException e) {
+            log.error("Kafka publication could not be confirmed, orderId={}", orderId, e);
+        }
+        // The broker might already have received the event. Keep the reservation for reconciliation.
+        return Result.fail("下单提交状态待确认，订单号：" + orderId);
     }
 
-    public void createVoucherOrder(VoucherOrder voucherOrder) {
-        Long userId = voucherOrder.getUserId();
-        Long voucherId = voucherOrder.getVoucherId();
-        // 创建锁对象
-        RLock redisLock = redissonClient.getLock("lock:order:" + userId);
-        // 尝试获取锁
-        boolean isLock = redisLock.tryLock();
-        // 判断
-        if (!isLock) {
-            // 获取锁失败，直接返回失败或者重试
-            log.error("不允许重复下单！");
+    @Override
+    public Result queryOrderStatus(Long orderId) {
+        boolean exists = query().eq("id", orderId).eq("user_id", UserHolder.getUser().getId()).count() > 0;
+        return Result.ok(Map.of("status", exists ? "CREATED" : "PENDING_OR_UNKNOWN"));
+    }
+
+    @Override
+    @Transactional
+    public void createVoucherOrder(VoucherOrder order) {
+        if (order.getId() == null || order.getUserId() == null || order.getVoucherId() == null) {
+            throw new IllegalArgumentException("Order event is missing an identifier");
+        }
+        Long userId = order.getUserId();
+        Long voucherId = order.getVoucherId();
+        if (query().eq("user_id", userId).eq("voucher_id", voucherId).count() > 0) {
             return;
         }
 
-        try {
-            // 6.扣减库存
-            boolean success = seckillVoucherService.update()
-                    .setSql("stock = stock - 1") // set stock = stock - 1
-                    .eq("voucher_id", voucherId).gt("stock", 0) // where id = ? and stock > 0
-                    .update();
-            if (!success) {
-                // 扣减失败
-                log.error("库存不足！");
-                return;
-            }
-            // 7.创建订单
-            save(voucherOrder);
-        } finally {
-            // 释放锁
-            redisLock.unlock();
+        // The unique constraint also covers duplicates that race past the existence check.
+        if (!save(new VoucherOrder().setId(order.getId()).setUserId(userId).setVoucherId(voucherId))) {
+            throw new IllegalStateException("Could not persist order " + order.getId());
+        }
+        boolean deducted = seckillVoucherService.update()
+                .setSql("stock = stock - 1")
+                .eq("voucher_id", voucherId)
+                .gt("stock", 0)
+                .update();
+        if (!deducted) {
+            throw new IllegalStateException("MySQL stock unavailable for pack " + voucherId);
         }
     }
 }

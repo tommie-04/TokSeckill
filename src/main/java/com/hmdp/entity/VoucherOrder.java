@@ -11,9 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 
- * </p>
+ * A token-pack order backed by the legacy voucher-order table.
  *
  * @author 虎哥
  * @since 2021-12-22
