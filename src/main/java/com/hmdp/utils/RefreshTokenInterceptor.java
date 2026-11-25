@@ -1,5 +1,7 @@
 package com.hmdp.utils;
 
+// Loads the user from Redis, refreshes the token lifetime, and clears thread-local state after the request.
+
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.hmdp.dto.UserDTO;

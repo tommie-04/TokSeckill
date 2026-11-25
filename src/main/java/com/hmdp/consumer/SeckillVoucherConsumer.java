@@ -1,5 +1,7 @@
 package com.hmdp.consumer;
 
+// Example Kafka consumer for flash-sale orders; its listener configuration requires completion.
+
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.service.IVoucherOrderService;
 import lombok.extern.slf4j.Slf4j;

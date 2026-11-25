@@ -1,5 +1,7 @@
 package com.hmdp.limiter.aop;
 
+// Applies annotation-driven rate limits using a Redis Lua script.
+
 import com.hmdp.limiter.annotation.RateLimiter;
 import com.hmdp.limiter.exception.RateLimitException;
 import lombok.extern.slf4j.Slf4j;

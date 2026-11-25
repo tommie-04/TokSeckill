@@ -1,5 +1,7 @@
 package com.hmdp.utils;
 
+// Simple Redis lock example. Review ownership and expiration behavior before production use.
+
 import cn.hutool.core.lang.UUID;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;

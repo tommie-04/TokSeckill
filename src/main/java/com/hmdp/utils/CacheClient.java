@@ -1,5 +1,7 @@
 package com.hmdp.utils;
 
+// Reusable Redis cache helpers for pass-through and logical-expiration strategies.
+
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;

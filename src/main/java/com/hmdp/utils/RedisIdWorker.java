@@ -1,5 +1,7 @@
 package com.hmdp.utils;
 
+// Generates IDs from a timestamp and a Redis-backed sequence.
+
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 

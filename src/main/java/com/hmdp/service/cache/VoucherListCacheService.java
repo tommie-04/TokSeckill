@@ -1,5 +1,7 @@
 package com.hmdp.service.cache;
 
+// Loads voucher lists using the selected MySQL, Redis, or Caffeine cache mode.
+
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;

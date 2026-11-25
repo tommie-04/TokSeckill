@@ -1,5 +1,7 @@
 package com.hmdp.service.impl;
 
+// Flash-sale entry point: run Redis eligibility checks, then publish an order message. The consumer flow is still an example.
+
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.VoucherOrder;
