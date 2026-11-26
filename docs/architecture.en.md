@@ -6,25 +6,6 @@
 
 The build uses Java 17, Spring Boot 2.7.18, MyBatis-Plus 3.5.3.1, MySQL Connector/J 8.0.33, Spring Kafka 2.8.11, Caffeine 2.9.3, and Redisson 3.17.7. LangChain4j 1.0.1 supports the local assistant reference.
 
-```mermaid
-flowchart LR
-    Browser --> Nginx["Nginx :8080"]
-    Nginx --> Pages["Static catalog and login"]
-    Nginx -->|"/api/*"| MVC["Spring Boot MVC :8081"]
-    MVC --> Catalog["Pack catalog"]
-    MVC --> Order["Authenticated orders"]
-    Catalog -->|caffeine mode| L1["Caffeine per JVM"]
-    Catalog -->|redis mode| Redis[(Redis)]
-    L1 --> Redis
-    Catalog -->|mysql mode| DB[(MySQL)]
-    Redis -->|catalog miss| DB
-    Order -->|Lua eligibility and reservation| Redis
-    Order -->|eligible request| Kafka
-    Kafka --> Worker["Order consumer"]
-    Worker -->|insert order and deduct stock in one transaction| DB
-    Order -->|owner-scoped order lookup| DB
-```
-
 | Domain concept | Current mapping |
 | --- | --- |
 | Model supplier | `tb_shop`, with text, reasoning, and multimodal demo entries |
@@ -34,28 +15,75 @@ flowchart LR
 | HTTP entry points | `GET /token-packs/list/{providerId}`, `POST /token-pack-orders/seckill/{id}`, `GET /token-pack-orders/{id}` |
 | Session | Redis Hash → `RefreshTokenInterceptor` → `UserHolder` → `LoginInterceptor` |
 
-Legacy package names, database tables, and routes make it easier to migrate an existing learning database. The current catalog uses three demo supplier IDs. A dynamic supplier list can be added with the Vue frontend. Lua checks live stock when processing a reservation. Catalog inventory can be stale.
+The catalog displays a stock snapshot. Lua checks current availability when a user reserves a pack.
+
+## Architecture and request flow
+
+TokenFlash runs as one Spring Boot application. Start in a business package, then follow its controller, service and mapper. The Kafka listener runs in the same application and opens a separate MySQL transaction for each order.
+
+```mermaid
+flowchart TD
+    B["Browser"] --> N["Nginx"]
+    N --> UI["frontend/html/tokenflash"]
+    N -->|"/api/"| M["Spring MVC"]
+    M --> U["user · login and session"]
+    U --> R[(Redis)]
+    M --> P["tokenpack · catalog"]
+    P -->|caffeine| C["Caffeine L1"]
+    P -->|redis| RC["Redis catalog cache"]
+    C -->|miss| RC
+    RC -->|miss| D[(MySQL)]
+    P -->|mysql| D
+    M --> S["seckill · reservePack"]
+    S --> G["FlashSaleReservations"]
+    G -->|"seckill.lua"| R
+    S -->|"after admission"| K["OrderEventPublisher → Kafka"]
+    K -->|"broker ACK"| ID["HTTP response · order ID"]
+    K --> L["OrderEventConsumer"]
+    L --> T["persistReservedOrder"]
+    T -->|"insert order + decrement stock"| D
+    M --> Q["seckill · queryOrderStatus"]
+    Q --> D
+```
+
+## Directory map
 
 ```text
-frontend/
-  conf/                     Nginx and /api proxy
-  html/tokenflash/                Catalog and legacy static assets
-scripts/
-  warm-token-pack.sh        Load sale windows and initial stock from MySQL
-src/main/java/com/tokenflash/
-  controller/               HTTP entry points
-  service/cache/            L1/L2 catalog reads
-  service/impl/             Reservations, Kafka publishing, order transaction
-  consumer/                 Kafka listener
-  mapper/                   MyBatis-Plus data access
-  config/                   Redis, Kafka, and MVC configuration
-  limiter/                  Rate-limit annotations and aspect
-  ai/                       Reference assistant
-src/main/resources/
-  db/                       Course schema, migration, demo fixtures
-  mapper/                   MyBatis SQL mappings
-  *.lua                     Reservation, rate-limit, and unlock scripts
-docs/                       Architecture and interview notes
+TokenFlash/
+├── pom.xml
+├── frontend/
+│   ├── conf/nginx.conf
+│   └── html/tokenflash/          # Catalog, login and assets
+├── src/main/java/com/tokenflash/
+│   ├── TokenFlashApplication.java
+│   ├── user/                     # Login, profiles and request context
+│   │   └── auth/ · controller/ · dto/ · entity/ · mapper/ · service/
+│   ├── tokenpack/                # Catalog, catalog cache and sale stock
+│   │   └── controller/ · entity/ · mapper/ · service/{cache,impl}/
+│   ├── seckill/                  # Admission, order status and persistence
+│   │   └── controller/ · entity/ · mapper/ · service/impl/
+│   ├── provider/                 # Provider profiles, categories and nearby search
+│   ├── community/                # Posts, follows and image uploads
+│   ├── ai/                       # Local assistant, memory and tools
+│   │   └── config/ · controller/ · entity/ · mapper/ · repository/ · service/ · tools/
+│   ├── infrastructure/
+│   │   ├── cache/                # Reusable cache strategies
+│   │   ├── redis/                # Reservations, sessions, sign-ins and indexes
+│   │   ├── lock/                 # Distributed locks and Redisson configuration
+│   │   ├── limiter/              # Rate-limit annotations and aspect
+│   │   └── mq/                   # Kafka publisher, listener and retry policy
+│   ├── config/                   # MVC, MyBatis and exception handling
+│   └── common/                   # API results and shared types
+├── src/main/resources/
+│   ├── application.yaml
+│   ├── db/                       # Schema, migration and demo fixtures
+│   ├── mapper/TokenPackMapper.xml
+│   ├── lua/                      # Reservation, rate limiting and unlock
+│   └── static/consultant.html
+├── src/test/java/com/tokenflash/
+├── scripts/warm-token-pack.sh
+├── docs/
+└── .github/workflows/build.yml
 ```
 
 ## Vue full-stack plan

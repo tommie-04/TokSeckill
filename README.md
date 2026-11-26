@@ -37,6 +37,75 @@
 | 登录与限流 | [MvcConfig](src/main/java/com/tokenflash/config/MvcConfig.java) · [limiter/](src/main/java/com/tokenflash/infrastructure/limiter/) |
 | 课程客服参考 | [ai/](src/main/java/com/tokenflash/ai/) 使用 LangChain4j 和 Redis 会话窗口，默认关闭 |
 
+## 架构与请求流程
+
+TokenFlash 是按业务域组织的 Spring Boot 单体。查功能时先选业务包，再沿 Controller → Service → Mapper 阅读。Kafka 消费者运行在同一应用内，用独立的 MySQL 事务创建订单并扣库存。
+
+```mermaid
+flowchart TD
+    B["浏览器"] --> N["Nginx"]
+    N --> UI["frontend/html/tokenflash"]
+    N -->|"/api/"| M["Spring MVC"]
+    M --> U["user · 登录与会话"]
+    U --> R[(Redis)]
+    M --> P["tokenpack · 目录"]
+    P -->|caffeine| C["Caffeine L1"]
+    P -->|redis| RC["Redis catalog cache"]
+    C -->|miss| RC
+    RC -->|miss| D[(MySQL)]
+    P -->|mysql| D
+    M --> S["seckill · reservePack"]
+    S --> G["FlashSaleReservations"]
+    G -->|"seckill.lua"| R
+    S -->|"预扣成功"| K["OrderEventPublisher → Kafka"]
+    K -->|"broker ACK"| ID["HTTP 返回订单号"]
+    K --> L["OrderEventConsumer"]
+    L --> T["persistReservedOrder"]
+    T -->|"同一事务写订单、扣库存"| D
+    M --> Q["seckill · queryOrderStatus"]
+    Q --> D
+```
+
+## 文件目录架构
+
+```text
+TokenFlash/
+├── pom.xml
+├── frontend/
+│   ├── conf/nginx.conf
+│   └── html/tokenflash/          # 目录、登录与静态资源
+├── src/main/java/com/tokenflash/
+│   ├── TokenFlashApplication.java
+│   ├── user/                     # 登录、用户资料与请求上下文
+│   │   └── auth/ · controller/ · dto/ · entity/ · mapper/ · service/
+│   ├── tokenpack/                # 目录查询、目录缓存与活动库存
+│   │   └── controller/ · entity/ · mapper/ · service/{cache,impl}/
+│   ├── seckill/                  # 资格判定、订单查询与落库事务
+│   │   └── controller/ · entity/ · mapper/ · service/impl/
+│   ├── provider/                 # 供应商资料、分类与附近查询
+│   ├── community/                # 笔记、关注与图片上传
+│   ├── ai/                       # 本地客服、会话仓储与工具调用
+│   │   └── config/ · controller/ · entity/ · mapper/ · repository/ · service/ · tools/
+│   ├── infrastructure/
+│   │   ├── cache/                # 通用缓存策略
+│   │   ├── redis/                # 秒杀预扣、会话、签到与索引
+│   │   ├── lock/                 # 分布式锁与 Redisson 配置
+│   │   ├── limiter/              # 限流注解与切面
+│   │   └── mq/                   # Kafka 发布、监听与重试配置
+│   ├── config/                   # MVC、MyBatis 与异常处理
+│   └── common/                   # 统一返回与共享类型
+├── src/main/resources/
+│   ├── application.yaml
+│   ├── db/                       # 基础表、增量迁移与演示数据
+│   ├── mapper/TokenPackMapper.xml
+│   ├── lua/                      # 预扣、限流与解锁
+│   └── static/consultant.html
+├── src/test/java/com/tokenflash/
+├── scripts/warm-token-pack.sh
+├── docs/
+└── .github/workflows/build.yml
+```
+
 ## 快速开始
 
 准备 JDK 17、Maven 3.6+、MySQL、Redis、Kafka 和 Nginx。使用一个全新的本地学习库。基础 SQL 会重建其中的课程表。
@@ -80,6 +149,10 @@ nginx -p "$PWD/frontend/" -c conf/nginx.conf
 ```
 
 打开 [本地首页](http://127.0.0.1:8080/)。选包、登录、提交秒杀，再刷新订单状态。页面的库存用于展示，资格以 Redis Lua 的校验为准。
+
+**从旧项目升级**。已有学习库可设置 `MYSQL_DATABASE=hmdp`（或原库名），后端和预热脚本共用这个值。自定义配置前缀 `hmdp.kafka`、`hmdp.ai`、`hmdp.cache.voucher-list` 分别改为 `tokenflash.kafka`、`tokenflash.ai`、`tokenflash.cache.token-pack-list`。已有表名、Redis key、Kafka 消息字段和 HTTP 路由继续兼容。
+
+**运行测试**。按上面的步骤初始化专用测试库、Redis 和 Kafka topic 后，运行 `mvn clean verify`。订单回归测试从 HTTP 路由验证目录 Mapper、登录拦截、Lua 预扣、Kafka 消费落单和实际库存。GitHub Actions 使用隔离服务运行同一命令。
 
 ## 实现与学习边界
 

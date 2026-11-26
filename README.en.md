@@ -37,6 +37,75 @@ The demo covers the pack catalog, reservation, and order creation. Payment, real
 | Login and rate limiting | [MvcConfig](src/main/java/com/tokenflash/config/MvcConfig.java) · [limiter/](src/main/java/com/tokenflash/infrastructure/limiter/) |
 | Course assistant reference | [ai/](src/main/java/com/tokenflash/ai/) contains a LangChain4j and Redis chat history example, disabled by default |
 
+## Architecture and request flow
+
+TokenFlash runs as one Spring Boot application. Start in a business package, then follow its controller, service and mapper. The Kafka listener runs in the same application and opens a separate MySQL transaction for each order.
+
+```mermaid
+flowchart TD
+    B["Browser"] --> N["Nginx"]
+    N --> UI["frontend/html/tokenflash"]
+    N -->|"/api/"| M["Spring MVC"]
+    M --> U["user · login and session"]
+    U --> R[(Redis)]
+    M --> P["tokenpack · catalog"]
+    P -->|caffeine| C["Caffeine L1"]
+    P -->|redis| RC["Redis catalog cache"]
+    C -->|miss| RC
+    RC -->|miss| D[(MySQL)]
+    P -->|mysql| D
+    M --> S["seckill · reservePack"]
+    S --> G["FlashSaleReservations"]
+    G -->|"seckill.lua"| R
+    S -->|"after admission"| K["OrderEventPublisher → Kafka"]
+    K -->|"broker ACK"| ID["HTTP response · order ID"]
+    K --> L["OrderEventConsumer"]
+    L --> T["persistReservedOrder"]
+    T -->|"insert order + decrement stock"| D
+    M --> Q["seckill · queryOrderStatus"]
+    Q --> D
+```
+
+## Directory map
+
+```text
+TokenFlash/
+├── pom.xml
+├── frontend/
+│   ├── conf/nginx.conf
+│   └── html/tokenflash/          # Catalog, login and assets
+├── src/main/java/com/tokenflash/
+│   ├── TokenFlashApplication.java
+│   ├── user/                     # Login, profiles and request context
+│   │   └── auth/ · controller/ · dto/ · entity/ · mapper/ · service/
+│   ├── tokenpack/                # Catalog, catalog cache and sale stock
+│   │   └── controller/ · entity/ · mapper/ · service/{cache,impl}/
+│   ├── seckill/                  # Admission, order status and persistence
+│   │   └── controller/ · entity/ · mapper/ · service/impl/
+│   ├── provider/                 # Provider profiles, categories and nearby search
+│   ├── community/                # Posts, follows and image uploads
+│   ├── ai/                       # Local assistant, memory and tools
+│   │   └── config/ · controller/ · entity/ · mapper/ · repository/ · service/ · tools/
+│   ├── infrastructure/
+│   │   ├── cache/                # Reusable cache strategies
+│   │   ├── redis/                # Reservations, sessions, sign-ins and indexes
+│   │   ├── lock/                 # Distributed locks and Redisson configuration
+│   │   ├── limiter/              # Rate-limit annotations and aspect
+│   │   └── mq/                   # Kafka publisher, listener and retry policy
+│   ├── config/                   # MVC, MyBatis and exception handling
+│   └── common/                   # API results and shared types
+├── src/main/resources/
+│   ├── application.yaml
+│   ├── db/                       # Schema, migration and demo fixtures
+│   ├── mapper/TokenPackMapper.xml
+│   ├── lua/                      # Reservation, rate limiting and unlock
+│   └── static/consultant.html
+├── src/test/java/com/tokenflash/
+├── scripts/warm-token-pack.sh
+├── docs/
+└── .github/workflows/build.yml
+```
+
 ## Quick start
 
 Install JDK 17, Maven 3.6+, MySQL, Redis, Kafka, and Nginx. Use a fresh local database. The base SQL recreates the training tables in that database.
@@ -80,6 +149,10 @@ nginx -p "$PWD/frontend/" -c conf/nginx.conf
 ```
 
 Open the [local catalog](http://127.0.0.1:8080/). Choose a pack, sign in, submit the reservation, and refresh the order state. Displayed stock is a snapshot. The Redis Lua script checks availability when users submit their requests.
+
+**Upgrading an existing checkout.** Set `MYSQL_DATABASE=hmdp` (or your existing schema name) for both the service and warmup script. Rename custom Spring properties from `hmdp.kafka`, `hmdp.ai`, and `hmdp.cache.voucher-list` to `tokenflash.kafka`, `tokenflash.ai`, and `tokenflash.cache.token-pack-list`. Table names, Redis keys, Kafka payload fields and existing HTTP routes are preserved.
+
+**Run the checks.** With the test database, Redis and Kafka topic initialized as above, run `mvn clean verify`. The order-flow test exercises the catalog mapper, login guard, Lua admission, Kafka listener and committed stock through the HTTP routes. GitHub Actions provisions isolated services for the same command.
 
 ## Implementation status and roadmap
 

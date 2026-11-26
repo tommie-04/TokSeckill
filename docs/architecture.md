@@ -6,25 +6,6 @@
 
 运行基线为 Java 17、Spring Boot 2.7.18、MyBatis-Plus 3.5.3.1、MySQL Connector/J 8.0.33、Spring Kafka 2.8.11、Caffeine 2.9.3、Redisson 3.17.7。LangChain4j 1.0.1 用于本地客服参考。
 
-```mermaid
-flowchart LR
-    Browser[浏览器] --> Nginx["Nginx :8080"]
-    Nginx --> Pages["静态目录与登录页面"]
-    Nginx -->|"/api/*"| MVC["Spring Boot :8081 / MVC"]
-    MVC --> Catalog["Token 包目录"]
-    MVC --> Order["登录校验 / 秒杀与订单查询"]
-    Catalog -->|caffeine 模式| L1["Caffeine / 每个 JVM"]
-    Catalog -->|redis 模式| Redis[(Redis)]
-    L1 --> Redis
-    Catalog -->|mysql 模式| DB[(MySQL)]
-    Redis -->|目录未命中| DB
-    Order -->|Lua 校验与预扣| Redis
-    Order -->|通过校验后发布| Kafka[Kafka]
-    Kafka --> Worker[订单消费者]
-    Worker -->|同一事务写单与扣库存| DB
-    Order -->|查当前用户订单| DB
-```
-
 | 业务概念 | 当前实现 |
 | --- | --- |
 | 模型供应商 | `tb_shop`，演示数据包含文本、推理、多模态三类 |
@@ -34,28 +15,75 @@ flowchart LR
 | HTTP 入口 | `GET /token-packs/list/{providerId}`、`POST /token-pack-orders/seckill/{id}`、`GET /token-pack-orders/{id}` |
 | 登录态 | Redis Hash → `RefreshTokenInterceptor` → `UserHolder` → `LoginInterceptor` |
 
-沿用原有的 Java 包名、数据库表名及旧路由，降低学习库迁移成本。当前首页的供应商来自三组演示 ID。后续 Vue 目录可接入动态供应商列表。Token 包的可购买性由 Lua 在写入时判定，目录库存可能滞后。
+目录库存是查询时的快照；用户抢购时由 Lua 校验实时库存。
+
+## 架构与请求流程
+
+TokenFlash 是按业务域组织的 Spring Boot 单体。查功能时先选业务包，再沿 Controller → Service → Mapper 阅读。Kafka 消费者运行在同一应用内，用独立的 MySQL 事务创建订单并扣库存。
+
+```mermaid
+flowchart TD
+    B["浏览器"] --> N["Nginx"]
+    N --> UI["frontend/html/tokenflash"]
+    N -->|"/api/"| M["Spring MVC"]
+    M --> U["user · 登录与会话"]
+    U --> R[(Redis)]
+    M --> P["tokenpack · 目录"]
+    P -->|caffeine| C["Caffeine L1"]
+    P -->|redis| RC["Redis catalog cache"]
+    C -->|miss| RC
+    RC -->|miss| D[(MySQL)]
+    P -->|mysql| D
+    M --> S["seckill · reservePack"]
+    S --> G["FlashSaleReservations"]
+    G -->|"seckill.lua"| R
+    S -->|"预扣成功"| K["OrderEventPublisher → Kafka"]
+    K -->|"broker ACK"| ID["HTTP 返回订单号"]
+    K --> L["OrderEventConsumer"]
+    L --> T["persistReservedOrder"]
+    T -->|"同一事务写订单、扣库存"| D
+    M --> Q["seckill · queryOrderStatus"]
+    Q --> D
+```
+
+## 文件目录架构
 
 ```text
-frontend/
-  conf/                     Nginx 与 /api 代理
-  html/tokenflash/                 Token 包首页与课程静态资源
-scripts/
-  warm-token-pack.sh         从 MySQL 预热活动窗口和库存
-src/main/java/com/tokenflash/
-  controller/                HTTP、鉴权后的请求入口
-  service/cache/             目录 L1/L2 读取
-  service/impl/              Lua 资格判定、Kafka 发布、订单事务
-  consumer/                  Kafka 监听
-  mapper/                    MyBatis-Plus 数据访问
-  config/                    Redis、Kafka、MVC 等配置
-  limiter/                   限流注解、切面和异常
-  ai/                        课程客服参考代码
-src/main/resources/
-  db/                        课程基线、增量迁移、Token 包演示数据
-  mapper/                    MyBatis SQL 映射
-  *.lua                      资格校验、限流、锁释放脚本
-docs/                        架构、学习路线和面试提纲
+TokenFlash/
+├── pom.xml
+├── frontend/
+│   ├── conf/nginx.conf
+│   └── html/tokenflash/          # 目录、登录与静态资源
+├── src/main/java/com/tokenflash/
+│   ├── TokenFlashApplication.java
+│   ├── user/                     # 登录、用户资料与请求上下文
+│   │   └── auth/ · controller/ · dto/ · entity/ · mapper/ · service/
+│   ├── tokenpack/                # 目录查询、目录缓存与活动库存
+│   │   └── controller/ · entity/ · mapper/ · service/{cache,impl}/
+│   ├── seckill/                  # 资格判定、订单查询与落库事务
+│   │   └── controller/ · entity/ · mapper/ · service/impl/
+│   ├── provider/                 # 供应商资料、分类与附近查询
+│   ├── community/                # 笔记、关注与图片上传
+│   ├── ai/                       # 本地客服、会话仓储与工具调用
+│   │   └── config/ · controller/ · entity/ · mapper/ · repository/ · service/ · tools/
+│   ├── infrastructure/
+│   │   ├── cache/                # 通用缓存策略
+│   │   ├── redis/                # 秒杀预扣、会话、签到与索引
+│   │   ├── lock/                 # 分布式锁与 Redisson 配置
+│   │   ├── limiter/              # 限流注解与切面
+│   │   └── mq/                   # Kafka 发布、监听与重试配置
+│   ├── config/                   # MVC、MyBatis 与异常处理
+│   └── common/                   # 统一返回与共享类型
+├── src/main/resources/
+│   ├── application.yaml
+│   ├── db/                       # 基础表、增量迁移与演示数据
+│   ├── mapper/TokenPackMapper.xml
+│   ├── lua/                      # 预扣、限流与解锁
+│   └── static/consultant.html
+├── src/test/java/com/tokenflash/
+├── scripts/warm-token-pack.sh
+├── docs/
+└── .github/workflows/build.yml
 ```
 
 ## Vue 全栈方案
