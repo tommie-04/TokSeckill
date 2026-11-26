@@ -17,7 +17,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: ci-local
           MYSQL_ROOT_HOST: "%"
         ports: ["3306:3306"]
-        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=3s --health-retries=30
+        options: --health-cmd="mysql --protocol=tcp -h 127.0.0.1 -u root -pci-local tokenflash -e 'SELECT 1'" --health-interval=5s --health-timeout=3s --health-retries=30
       redis:
         image: redis:7
         ports: ["6379:6379"]
