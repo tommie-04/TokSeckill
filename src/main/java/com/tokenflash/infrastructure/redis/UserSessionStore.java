@@ -5,6 +5,7 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import com.tokenflash.user.dto.UserDTO;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ public class UserSessionStore {
     public void saveSession(String token, UserDTO user) {
         String key = LOGIN_USER_KEY + token;
         Map<String, Object> fields = BeanUtil.beanToMap(user, new HashMap<>(), CopyOptions.create()
-                .setIgnoreNullValue(true).setFieldValueEditor((name, value) -> value.toString()));
+                .setIgnoreNullValue(true).setFieldValueEditor((name, value) -> Objects.toString(value, null)));
         redis.opsForHash().putAll(key, fields);
         redis.expire(key, LOGIN_USER_TTL, TimeUnit.MINUTES);
     }

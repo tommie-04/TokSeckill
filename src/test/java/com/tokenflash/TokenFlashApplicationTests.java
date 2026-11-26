@@ -14,7 +14,11 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -38,26 +42,19 @@ class TokenFlashApplicationTests {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
-    private ExecutorService es = Executors.newFixedThreadPool(500);
-
     @Test
-    void testIdWorker() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(300);
-
-        Runnable task = () -> {
-            for (int i = 0; i < 100; i++) {
-                long id = redisIdWorker.nextId("order");
-                System.out.println("id = " + id);
+    void testIdWorker() throws Exception {
+        ExecutorService workers = Executors.newFixedThreadPool(8);
+        try {
+            List<Callable<Long>> tasks = java.util.Collections.nCopies(300, () -> redisIdWorker.nextId("test-order"));
+            Set<Long> ids = new HashSet<>();
+            for (Future<Long> id : workers.invokeAll(tasks)) {
+                ids.add(id.get());
             }
-            latch.countDown();
-        };
-        long begin = System.currentTimeMillis();
-        for (int i = 0; i < 300; i++) {
-            es.submit(task);
+            assertEquals(tasks.size(), ids.size());
+        } finally {
+            workers.shutdown();
         }
-        latch.await();
-        long end = System.currentTimeMillis();
-        System.out.println("time = " + (end - begin));
     }
 
     @Test
