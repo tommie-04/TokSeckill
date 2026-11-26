@@ -31,7 +31,7 @@
 
 | 模块 | 入口 |
 | --- | --- |
-| 目录与多级缓存 | [VoucherController](src/main/java/com/hmdp/controller/VoucherController.java) → [VoucherListCacheService](src/main/java/com/hmdp/service/cache/VoucherListCacheService.java) |
+| 目录与多级缓存 | [TokenPackController](src/main/java/com/hmdp/tokenpack/controller/TokenPackController.java) → [TokenPackCatalogCache](src/main/java/com/hmdp/tokenpack/service/cache/TokenPackCatalogCache.java) |
 | 秒杀与订单查询 | [VoucherOrderController](src/main/java/com/hmdp/controller/VoucherOrderController.java) → [VoucherOrderServiceImpl](src/main/java/com/hmdp/service/impl/VoucherOrderServiceImpl.java) → [seckill.lua](src/main/resources/lua/seckill.lua) |
 | 消费、重试与事务 | [SeckillVoucherConsumer](src/main/java/com/hmdp/infrastructure/mq/SeckillVoucherConsumer.java) · [KafkaConfig](src/main/java/com/hmdp/infrastructure/mq/KafkaConfig.java) |
 | 登录与限流 | [MvcConfig](src/main/java/com/hmdp/config/MvcConfig.java) · [limiter/](src/main/java/com/hmdp/limiter/) |

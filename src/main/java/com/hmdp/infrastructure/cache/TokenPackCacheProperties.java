@@ -9,7 +9,7 @@ import java.time.Duration;
 @Data
 @Component
 @ConfigurationProperties(prefix = "hmdp.cache.voucher-list")
-public class VoucherCacheProperties {
+public class TokenPackCacheProperties {
     /**
      * 缓存模式: mysql(仅DB), redis(仅Redis+DB回源), caffeine(本地缓存+Redis+DB回源)
      */

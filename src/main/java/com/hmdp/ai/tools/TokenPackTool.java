@@ -2,12 +2,12 @@ package com.hmdp.ai.tools;
 
 import com.hmdp.entity.Shop;
 import com.hmdp.user.entity.User;
-import com.hmdp.entity.Voucher;
+import com.hmdp.tokenpack.entity.TokenPack;
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.service.IShopService;
 import com.hmdp.user.service.IUserService;
 import com.hmdp.service.IVoucherOrderService;
-import com.hmdp.service.IVoucherService;
+import com.hmdp.tokenpack.service.ITokenPackService;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import org.springframework.stereotype.Component;
@@ -18,13 +18,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class VoucherTool {
+public class TokenPackTool {
 
     @Resource
     private IShopService shopService;
 
     @Resource
-    private IVoucherService voucherService;
+    private ITokenPackService tokenPackService;
 
     @Resource
     private IUserService userService;
@@ -33,16 +33,16 @@ public class VoucherTool {
     private IVoucherOrderService voucherOrderService;
 
     @Tool("根据商家名称查询商家的优惠券信息")
-    public List<Voucher> findVoucherByShopName(@P("商家名称") String shopName) {
+    public List<TokenPack> findVoucherByShopName(@P("商家名称") String shopName) {
         Shop shop = shopService.query().eq("name", shopName).one();
         if (shop == null) {
             return Collections.emptyList();
         }
-        return voucherService.query().eq("shop_id", shop.getId()).list();
+        return tokenPackService.query().eq("shop_id", shop.getId()).list();
     }
 
     @Tool("根据用户手机号查询用户拥有的优惠券信息")
-    public List<Voucher> findVoucherByUserPhone(@P("用户手机号") String userPhone) {
+    public List<TokenPack> findVoucherByUserPhone(@P("用户手机号") String userPhone) {
         User user = userService.query().eq("phone", userPhone).one();
         if (user == null) {
             return Collections.emptyList();
@@ -55,6 +55,6 @@ public class VoucherTool {
                 .map(VoucherOrder::getVoucherId)
                 .distinct()
                 .collect(Collectors.toList());
-        return voucherService.listByIds(voucherIds);
+        return tokenPackService.listByIds(voucherIds);
     }
 }

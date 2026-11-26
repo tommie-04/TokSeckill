@@ -1,4 +1,4 @@
-package com.hmdp.entity;
+package com.hmdp.tokenpack.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("tb_voucher")
-public class Voucher implements Serializable {
+public class TokenPack implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -37,7 +37,7 @@ public class Voucher implements Serializable {
     private Long shopId;
 
     /**
-     * 代金券标题
+     * Token 包标题
      */
     private String title;
 
@@ -65,12 +65,12 @@ public class Voucher implements Serializable {
     private Long tokenUnits;
 
     /**
-     * 优惠券类型
+     * Token 包类型
      */
     private Integer type;
 
     /**
-     * 优惠券类型
+     * Token 包上架状态
      */
     private Integer status;
     /**

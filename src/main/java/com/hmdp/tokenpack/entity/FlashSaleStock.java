@@ -1,4 +1,4 @@
-package com.hmdp.entity;
+package com.hmdp.tokenpack.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 /**
  * <p>
- * 秒杀优惠券表，与优惠券是一对一关系
+ * 秒杀Token 包表，与Token 包是一对一关系
  * </p>
  *
  * @author 虎哥
@@ -22,12 +22,12 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("tb_seckill_voucher")
-public class SeckillVoucher implements Serializable {
+public class FlashSaleStock implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 关联的优惠券的id
+     * 关联的Token 包的id
      */
     @TableId(value = "voucher_id", type = IdType.INPUT)
     private Long voucherId;

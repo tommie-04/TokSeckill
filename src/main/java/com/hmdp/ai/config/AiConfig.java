@@ -5,7 +5,7 @@ import com.hmdp.ai.repository.RedisChatMemoryStore;
 import com.hmdp.ai.service.ConsultantService;
 import com.hmdp.ai.tools.ReservationTool;
 import com.hmdp.ai.tools.ShopTool;
-import com.hmdp.ai.tools.VoucherTool;
+import com.hmdp.ai.tools.TokenPackTool;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -62,7 +62,7 @@ public class AiConfig {
             StreamingChatModel streamingChatModel,
             ChatMemoryProvider chatMemoryProvider,
             ShopTool shopTool,
-            VoucherTool voucherTool,
+            TokenPackTool voucherTool,
             ReservationTool reservationTool
     ) {
         return AiServices.builder(ConsultantService.class)

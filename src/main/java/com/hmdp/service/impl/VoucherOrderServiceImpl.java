@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.common.dto.Result;
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.mapper.VoucherOrderMapper;
-import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.tokenpack.service.IFlashSaleStockService;
 import com.hmdp.service.IVoucherOrderService;
 import com.hmdp.infrastructure.redis.RedisIdWorker;
 import com.hmdp.user.auth.UserHolder;
@@ -27,7 +27,7 @@ import java.util.Map;
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
 
     @Resource
-    private ISeckillVoucherService seckillVoucherService;
+    private IFlashSaleStockService stockService;
     @Resource
     private RedisIdWorker redisIdWorker;
     @Resource
@@ -81,7 +81,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if (!save(new VoucherOrder().setId(order.getId()).setUserId(userId).setVoucherId(voucherId))) {
             throw new IllegalStateException("Could not persist order " + order.getId());
         }
-        boolean deducted = seckillVoucherService.update()
+        boolean deducted = stockService.update()
                 .setSql("stock = stock - 1")
                 .eq("voucher_id", voucherId)
                 .gt("stock", 0)

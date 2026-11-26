@@ -4,11 +4,11 @@
 
 ## 1. Token 包目录与 Caffeine
 
-代码路径从 `VoucherController` 到 `VoucherServiceImpl`、`VoucherListCacheService`，最后到 `VoucherMapper.xml`。用相同请求逐个切换 `TOKEN_PACK_CACHE_MODE=mysql|redis|caffeine`，观察 L1 本地命中、Redis 共享命中和 MySQL 回源。默认值是 `mysql`，本地配置示例使用 `caffeine`。
+代码路径从 `TokenPackController` 到 `TokenPackServiceImpl`、`TokenPackCatalogCache`，最后到 `TokenPackMapper.xml`。用相同请求逐个切换 `TOKEN_PACK_CACHE_MODE=mysql|redis|caffeine`，观察 L1 本地命中、Redis 共享命中和 MySQL 回源。默认值是 `mysql`，本地配置示例使用 `caffeine`。
 
 - Caffeine 的 `maximumSize=1000` 限制单个 JVM 缓存条目数。W-TinyLFU 同时利用近期访问和历史频率挑选值得保留的条目，对短时突发和大量一次性查询有区分能力。Guava Cache 也提供容量限制、过期和加载。它有不同的基于 LRU 的容量淘汰实现，默认 `reload` 同步，也可自定义成异步。这里选择 Caffeine，是因为项目主要需要 JVM 本地缓存、热点保留与执行器上的异步刷新。命中率与延迟差异应以相同负载的测试为依据。[Caffeine 与 Guava](https://github.com/ben-manes/caffeine/wiki/Guava) · [Caffeine 淘汰策略](https://github.com/ben-manes/caffeine/wiki/Efficiency) · [Guava CacheBuilder](https://guava.dev/releases/33.4.5-jre/api/docs/com/google/common/cache/CacheBuilder.html)
 - `refreshAfterWrite=5s` 到期后，下一次读触发刷新，刷新期间可返回旧值。 `expireAfterWrite=10m` 是硬过期，过期后的读取走加载。L1 刷新也可能读到 Redis 中尚有效的旧值。L2 TTL 为 30 分钟，多实例的 L1 各自持有副本，目录库存允许短时滞后，秒杀资格由 Redis Lua 决定。[Caffeine Refresh](https://github.com/ben-manes/caffeine/wiki/Refresh)
-- 扩展追问覆盖热点击穿、空值防穿透、批量过期、两级失效和线程池。区分 `CacheClient` 的商户逻辑过期示例和 `VoucherListCacheService` 的目录刷新。后续可加入缓存命中率、回源次数、刷新失败次数和 P95 延迟。
+- 扩展追问覆盖热点击穿、空值防穿透、批量过期、两级失效和线程池。区分 `CacheClient` 的商户逻辑过期示例和 `TokenPackCatalogCache` 的目录刷新。后续可加入缓存命中率、回源次数、刷新失败次数和 P95 延迟。
 
 口述示例：“Token 包目录读多写少，我用 Caffeine 缓存各实例的热点目录，Redis 提供共享缓存，未命中时回 MySQL。展示库存允许短时滞后，真正的扣减资格由 Lua 统一检查。”
 
