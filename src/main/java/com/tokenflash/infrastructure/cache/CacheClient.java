@@ -33,6 +33,10 @@ public class CacheClient {
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
+    public void evict(String keyPrefix, Long id) {
+        stringRedisTemplate.delete(keyPrefix + id);
+    }
+
     public void set(String key, Object value, Long time, TimeUnit unit) {
         stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(value), time, unit);
     }

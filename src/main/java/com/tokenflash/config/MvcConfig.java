@@ -3,7 +3,7 @@ package com.tokenflash.config;
 import com.tokenflash.user.auth.LoginInterceptor;
 import com.tokenflash.user.auth.RefreshTokenInterceptor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import com.tokenflash.infrastructure.redis.UserSessionStore;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -13,7 +13,7 @@ import javax.annotation.Resource;
 public class MvcConfig implements WebMvcConfigurer {
 
     @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private UserSessionStore sessions;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -32,6 +32,6 @@ public class MvcConfig implements WebMvcConfigurer {
                         "/consultant.html"
                 ).order(1);
         // Rehydrate the current user before the login check runs.
-        registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate)).addPathPatterns("/**").order(0);
+        registry.addInterceptor(new RefreshTokenInterceptor(sessions)).addPathPatterns("/**").order(0);
     }
 }

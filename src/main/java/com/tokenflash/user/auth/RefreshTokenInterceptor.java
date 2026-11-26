@@ -1,29 +1,21 @@
 package com.tokenflash.user.auth;
 
-import com.tokenflash.infrastructure.redis.RedisConstants;
-
 // Loads the user from Redis, refreshes the token lifetime, and clears thread-local state after the request.
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.tokenflash.user.dto.UserDTO;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import com.tokenflash.infrastructure.redis.UserSessionStore;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static com.tokenflash.infrastructure.redis.RedisConstants.LOGIN_USER_KEY;
-import static com.tokenflash.infrastructure.redis.RedisConstants.LOGIN_USER_TTL;
 
 public class RefreshTokenInterceptor implements HandlerInterceptor {
 
-    private StringRedisTemplate stringRedisTemplate;
+    private final UserSessionStore sessions;
 
-    public RefreshTokenInterceptor(StringRedisTemplate stringRedisTemplate) {
-        this.stringRedisTemplate = stringRedisTemplate;
+    public RefreshTokenInterceptor(UserSessionStore sessions) {
+        this.sessions = sessions;
     }
 
     @Override
@@ -33,20 +25,10 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
         if (StrUtil.isBlank(token)) {
             return true;
         }
-        // 2.基于TOKEN获取redis中的用户
-        String key  = LOGIN_USER_KEY + token;
-        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(key);
-        // 3.判断用户是否存在
-        if (userMap.isEmpty()) {
-            return true;
+        UserDTO user = sessions.refreshSession(token);
+        if (user != null) {
+            UserHolder.saveUser(user);
         }
-        // 5.将查询到的hash数据转为UserDTO
-        UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap, new UserDTO(), false);
-        // 6.存在，保存用户信息到 ThreadLocal
-        UserHolder.saveUser(userDTO);
-        // 7.刷新token有效期
-        stringRedisTemplate.expire(key, LOGIN_USER_TTL, TimeUnit.MINUTES);
-        // 8.放行
         return true;
     }
 
