@@ -1,7 +1,7 @@
 package com.hmdp.ai.tools;
 
-import com.hmdp.entity.Shop;
-import com.hmdp.service.IShopService;
+import com.hmdp.provider.entity.Shop;
+import com.hmdp.provider.service.IShopService;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import org.springframework.stereotype.Component;

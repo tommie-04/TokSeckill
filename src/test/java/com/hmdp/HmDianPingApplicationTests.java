@@ -1,7 +1,7 @@
 package com.hmdp;
 
-import com.hmdp.entity.Shop;
-import com.hmdp.service.impl.ShopServiceImpl;
+import com.hmdp.provider.entity.Shop;
+import com.hmdp.provider.service.impl.ShopServiceImpl;
 import com.hmdp.infrastructure.cache.CacheClient;
 import com.hmdp.infrastructure.redis.RedisIdWorker;
 import org.junit.jupiter.api.Test;

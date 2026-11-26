@@ -1,7 +1,7 @@
 package com.hmdp.ai.tools;
 
-import com.hmdp.entity.Reservation;
-import com.hmdp.service.ReservationService;
+import com.hmdp.ai.entity.Reservation;
+import com.hmdp.ai.service.ReservationService;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import org.springframework.stereotype.Component;

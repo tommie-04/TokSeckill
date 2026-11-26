@@ -1,10 +1,10 @@
 package com.hmdp.ai.tools;
 
-import com.hmdp.entity.Shop;
+import com.hmdp.provider.entity.Shop;
 import com.hmdp.user.entity.User;
 import com.hmdp.tokenpack.entity.TokenPack;
 import com.hmdp.seckill.entity.TokenPackOrder;
-import com.hmdp.service.IShopService;
+import com.hmdp.provider.service.IShopService;
 import com.hmdp.user.service.IUserService;
 import com.hmdp.seckill.service.ITokenPackOrderService;
 import com.hmdp.tokenpack.service.ITokenPackService;
