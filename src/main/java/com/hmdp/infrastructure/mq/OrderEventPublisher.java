@@ -1,6 +1,6 @@
 package com.hmdp.infrastructure.mq;
 
-import com.hmdp.entity.VoucherOrder;
+import com.hmdp.seckill.entity.TokenPackOrder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -19,7 +19,7 @@ public class OrderEventPublisher {
     @Value("${hmdp.kafka.order-topic}")
     private String orderTopic;
 
-    public boolean publishAndAwaitAck(VoucherOrder order) {
+    public boolean publishAndAwaitAck(TokenPackOrder order) {
         try {
             kafkaTemplate.send(orderTopic, order.getId().toString(), order).get();
             return true;

@@ -1,4 +1,4 @@
-package com.hmdp.entity;
+package com.hmdp.seckill.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("tb_voucher_order")
-public class VoucherOrder implements Serializable {
+public class TokenPackOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

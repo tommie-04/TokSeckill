@@ -1,11 +1,11 @@
-package com.hmdp.service.impl;
+package com.hmdp.seckill.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.common.dto.Result;
-import com.hmdp.entity.VoucherOrder;
-import com.hmdp.mapper.VoucherOrderMapper;
+import com.hmdp.seckill.entity.TokenPackOrder;
+import com.hmdp.seckill.mapper.TokenPackOrderMapper;
 import com.hmdp.tokenpack.service.IFlashSaleStockService;
-import com.hmdp.service.IVoucherOrderService;
+import com.hmdp.seckill.service.ITokenPackOrderService;
 import com.hmdp.infrastructure.redis.RedisIdWorker;
 import com.hmdp.user.auth.UserHolder;
 import com.hmdp.infrastructure.mq.OrderEventPublisher;
@@ -24,7 +24,7 @@ import java.util.Map;
  * @since 2021-12-22
  */
 @Service
-public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
+public class TokenPackOrderServiceImpl extends ServiceImpl<TokenPackOrderMapper, TokenPackOrder> implements ITokenPackOrderService {
 
     @Resource
     private IFlashSaleStockService stockService;
@@ -36,10 +36,10 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private OrderEventPublisher publisher;
 
     @Override
-    public Result seckillVoucher(Long voucherId) {
+    public Result reservePack(Long packId) {
         Long userId = UserHolder.getUser().getId();
         long orderId = redisIdWorker.nextId("order");
-        Long result = reservations.reserve(voucherId, userId);
+        Long result = reservations.reserve(packId, userId);
         if (result == null) {
             return Result.fail("暂时无法确认秒杀资格");
         }
@@ -51,7 +51,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             default: throw new IllegalStateException("Unexpected eligibility response: " + result);
         }
 
-        VoucherOrder order = new VoucherOrder().setId(orderId).setUserId(userId).setVoucherId(voucherId);
+        TokenPackOrder order = new TokenPackOrder().setId(orderId).setUserId(userId).setVoucherId(packId);
         if (publisher.publishAndAwaitAck(order)) {
             return Result.ok(Long.toString(orderId));
         }
@@ -67,27 +67,27 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     @Override
     @Transactional
-    public void createVoucherOrder(VoucherOrder order) {
+    public void persistReservedOrder(TokenPackOrder order) {
         if (order.getId() == null || order.getUserId() == null || order.getVoucherId() == null) {
             throw new IllegalArgumentException("Order event is missing an identifier");
         }
         Long userId = order.getUserId();
-        Long voucherId = order.getVoucherId();
-        if (query().eq("user_id", userId).eq("voucher_id", voucherId).count() > 0) {
+        Long packId = order.getVoucherId();
+        if (query().eq("user_id", userId).eq("voucher_id", packId).count() > 0) {
             return;
         }
 
         // The unique constraint also covers duplicates that race past the existence check.
-        if (!save(new VoucherOrder().setId(order.getId()).setUserId(userId).setVoucherId(voucherId))) {
+        if (!save(new TokenPackOrder().setId(order.getId()).setUserId(userId).setVoucherId(packId))) {
             throw new IllegalStateException("Could not persist order " + order.getId());
         }
         boolean deducted = stockService.update()
                 .setSql("stock = stock - 1")
-                .eq("voucher_id", voucherId)
+                .eq("voucher_id", packId)
                 .gt("stock", 0)
                 .update();
         if (!deducted) {
-            throw new IllegalStateException("MySQL stock unavailable for pack " + voucherId);
+            throw new IllegalStateException("MySQL stock unavailable for pack " + packId);
         }
     }
 }
