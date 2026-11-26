@@ -1,15 +1,15 @@
-package com.hmdp.controller;
+package com.hmdp.user.controller;
 
 
 import cn.hutool.core.bean.BeanUtil;
-import com.hmdp.dto.LoginFormDTO;
-import com.hmdp.dto.Result;
-import com.hmdp.dto.UserDTO;
-import com.hmdp.entity.User;
-import com.hmdp.entity.UserInfo;
-import com.hmdp.service.IUserInfoService;
-import com.hmdp.service.IUserService;
-import com.hmdp.utils.UserHolder;
+import com.hmdp.user.dto.LoginFormDTO;
+import com.hmdp.common.dto.Result;
+import com.hmdp.user.dto.UserDTO;
+import com.hmdp.user.entity.User;
+import com.hmdp.user.entity.UserInfo;
+import com.hmdp.user.service.IUserInfoService;
+import com.hmdp.user.service.IUserService;
+import com.hmdp.user.auth.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 

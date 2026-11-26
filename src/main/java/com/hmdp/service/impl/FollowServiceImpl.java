@@ -3,13 +3,13 @@ package com.hmdp.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.hmdp.dto.Result;
-import com.hmdp.dto.UserDTO;
+import com.hmdp.common.dto.Result;
+import com.hmdp.user.dto.UserDTO;
 import com.hmdp.entity.Follow;
 import com.hmdp.mapper.FollowMapper;
 import com.hmdp.service.IFollowService;
-import com.hmdp.service.IUserService;
-import com.hmdp.utils.UserHolder;
+import com.hmdp.user.service.IUserService;
+import com.hmdp.user.auth.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 

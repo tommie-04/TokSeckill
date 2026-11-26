@@ -1,7 +1,7 @@
 package com.hmdp.controller;
 
 
-import com.hmdp.dto.Result;
+import com.hmdp.common.dto.Result;
 import com.hmdp.service.IVoucherOrderService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

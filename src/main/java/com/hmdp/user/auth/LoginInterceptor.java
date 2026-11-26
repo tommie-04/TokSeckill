@@ -1,4 +1,4 @@
-package com.hmdp.utils;
+package com.hmdp.user.auth;
 
 import org.springframework.web.servlet.HandlerInterceptor;
 

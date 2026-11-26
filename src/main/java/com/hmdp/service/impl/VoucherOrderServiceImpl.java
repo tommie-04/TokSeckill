@@ -1,13 +1,13 @@
 package com.hmdp.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.hmdp.dto.Result;
+import com.hmdp.common.dto.Result;
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.mapper.VoucherOrderMapper;
 import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.hmdp.infrastructure.redis.RedisIdWorker;
-import com.hmdp.utils.UserHolder;
+import com.hmdp.user.auth.UserHolder;
 import com.hmdp.infrastructure.mq.OrderEventPublisher;
 import com.hmdp.infrastructure.redis.FlashSaleReservations;
 import org.springframework.stereotype.Service;

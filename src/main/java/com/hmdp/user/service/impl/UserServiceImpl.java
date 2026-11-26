@@ -1,18 +1,18 @@
-package com.hmdp.service.impl;
+package com.hmdp.user.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.hmdp.dto.LoginFormDTO;
-import com.hmdp.dto.Result;
-import com.hmdp.dto.UserDTO;
-import com.hmdp.entity.User;
-import com.hmdp.mapper.UserMapper;
-import com.hmdp.service.IUserService;
-import com.hmdp.utils.RegexUtils;
-import com.hmdp.utils.UserHolder;
+import com.hmdp.user.dto.LoginFormDTO;
+import com.hmdp.common.dto.Result;
+import com.hmdp.user.dto.UserDTO;
+import com.hmdp.user.entity.User;
+import com.hmdp.user.mapper.UserMapper;
+import com.hmdp.user.service.IUserService;
+import com.hmdp.user.auth.RegexUtils;
+import com.hmdp.user.auth.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.hmdp.infrastructure.redis.RedisConstants.*;
-import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
+import static com.hmdp.common.SystemConstants.USER_NICK_NAME_PREFIX;
 
 /**
  * <p>

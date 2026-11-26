@@ -1,11 +1,11 @@
 package com.hmdp.ai.tools;
 
 import com.hmdp.entity.Shop;
-import com.hmdp.entity.User;
+import com.hmdp.user.entity.User;
 import com.hmdp.entity.Voucher;
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.service.IShopService;
-import com.hmdp.service.IUserService;
+import com.hmdp.user.service.IUserService;
 import com.hmdp.service.IVoucherOrderService;
 import com.hmdp.service.IVoucherService;
 import dev.langchain4j.agent.tool.P;

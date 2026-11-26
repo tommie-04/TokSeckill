@@ -1,6 +1,6 @@
-package com.hmdp.utils;
+package com.hmdp.user.auth;
 
-import com.hmdp.dto.UserDTO;
+import com.hmdp.user.dto.UserDTO;
 
 public class UserHolder {
     private static final ThreadLocal<UserDTO> tl = new ThreadLocal<>();
