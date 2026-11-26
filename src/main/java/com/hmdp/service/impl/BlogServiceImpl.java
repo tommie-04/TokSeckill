@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.hmdp.utils.RedisConstants.BLOG_LIKED_KEY;
-import static com.hmdp.utils.RedisConstants.FEED_KEY;
+import static com.hmdp.infrastructure.redis.RedisConstants.BLOG_LIKED_KEY;
+import static com.hmdp.infrastructure.redis.RedisConstants.FEED_KEY;
 
 /**
  * <p>

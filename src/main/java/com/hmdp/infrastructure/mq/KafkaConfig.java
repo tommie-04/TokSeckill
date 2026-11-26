@@ -1,4 +1,4 @@
-package com.hmdp.config;
+package com.hmdp.infrastructure.mq;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

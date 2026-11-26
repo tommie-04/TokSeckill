@@ -1,4 +1,4 @@
-package com.hmdp.utils;
+package com.hmdp.infrastructure.lock;
 
 // Simple Redis lock example. Review ownership and expiration behavior before production use.
 
@@ -25,7 +25,7 @@ public class SimpleRedisLock implements ILock {
     private static final DefaultRedisScript<Long> UNLOCK_SCRIPT;
     static {
         UNLOCK_SCRIPT = new DefaultRedisScript<>();
-        UNLOCK_SCRIPT.setLocation(new ClassPathResource("unlock.lua"));
+        UNLOCK_SCRIPT.setLocation(new ClassPathResource("lua/unlock.lua"));
         UNLOCK_SCRIPT.setResultType(Long.class);
     }
 

@@ -6,24 +6,15 @@ import com.hmdp.entity.VoucherOrder;
 import com.hmdp.mapper.VoucherOrderMapper;
 import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
-import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.infrastructure.redis.RedisIdWorker;
 import com.hmdp.utils.UserHolder;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.kafka.core.KafkaTemplate;
+import com.hmdp.infrastructure.mq.OrderEventPublisher;
+import com.hmdp.infrastructure.redis.FlashSaleReservations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import static com.hmdp.utils.RedisConstants.*;
 
 /**
  * Reserves one pack in Redis before Kafka submission. The consumer persists the order and
@@ -32,37 +23,23 @@ import static com.hmdp.utils.RedisConstants.*;
  * @author 虎哥
  * @since 2021-12-22
  */
-@Slf4j
 @Service
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
-
-    private static final DefaultRedisScript<Long> SECKILL_SCRIPT =
-            new DefaultRedisScript<>();
-
-    static {
-        SECKILL_SCRIPT.setLocation(new ClassPathResource("seckill.lua"));
-        SECKILL_SCRIPT.setResultType(Long.class);
-    }
 
     @Resource
     private ISeckillVoucherService seckillVoucherService;
     @Resource
     private RedisIdWorker redisIdWorker;
     @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private FlashSaleReservations reservations;
     @Resource
-    private KafkaTemplate<String, Object> kafkaTemplate;
-
-    @Value("${hmdp.kafka.order-topic}")
-    private String orderTopic;
+    private OrderEventPublisher publisher;
 
     @Override
     public Result seckillVoucher(Long voucherId) {
         Long userId = UserHolder.getUser().getId();
         long orderId = redisIdWorker.nextId("order");
-        Long result = stringRedisTemplate.execute(SECKILL_SCRIPT,
-                List.of(SECKILL_STOCK_KEY + voucherId, SECKILL_ORDER_KEY + voucherId, SECKILL_WINDOW_KEY + voucherId),
-                userId.toString(), Long.toString(Instant.now().getEpochSecond()));
+        Long result = reservations.reserve(voucherId, userId);
         if (result == null) {
             return Result.fail("暂时无法确认秒杀资格");
         }
@@ -75,15 +52,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         }
 
         VoucherOrder order = new VoucherOrder().setId(orderId).setUserId(userId).setVoucherId(voucherId);
-        try {
-            kafkaTemplate.send(orderTopic, Long.toString(orderId), order).get();
-            // Serialize the ID as a string so JavaScript retains all 64 bits.
+        if (publisher.publishAndAwaitAck(order)) {
             return Result.ok(Long.toString(orderId));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Interrupted while waiting for order admission, orderId={}", orderId, e);
-        } catch (ExecutionException | RuntimeException e) {
-            log.error("Kafka publication could not be confirmed, orderId={}", orderId, e);
         }
         // The broker might already have received the event. Keep the reservation for reconciliation.
         return Result.fail("下单提交状态待确认，订单号：" + orderId);

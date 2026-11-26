@@ -32,8 +32,8 @@ The demo covers the pack catalog, reservation, and order creation. Payment, real
 | Module | Code entry point |
 | --- | --- |
 | Catalog and two-level caching | [VoucherController](src/main/java/com/hmdp/controller/VoucherController.java) → [VoucherListCacheService](src/main/java/com/hmdp/service/cache/VoucherListCacheService.java) |
-| Flash sale and order lookup | [VoucherOrderController](src/main/java/com/hmdp/controller/VoucherOrderController.java) → [VoucherOrderServiceImpl](src/main/java/com/hmdp/service/impl/VoucherOrderServiceImpl.java) → [seckill.lua](src/main/resources/seckill.lua) |
-| Consumer, retries, and transaction | [SeckillVoucherConsumer](src/main/java/com/hmdp/consumer/SeckillVoucherConsumer.java) · [KafkaConfig](src/main/java/com/hmdp/config/KafkaConfig.java) |
+| Flash sale and order lookup | [VoucherOrderController](src/main/java/com/hmdp/controller/VoucherOrderController.java) → [VoucherOrderServiceImpl](src/main/java/com/hmdp/service/impl/VoucherOrderServiceImpl.java) → [seckill.lua](src/main/resources/lua/seckill.lua) |
+| Consumer, retries, and transaction | [SeckillVoucherConsumer](src/main/java/com/hmdp/infrastructure/mq/SeckillVoucherConsumer.java) · [KafkaConfig](src/main/java/com/hmdp/infrastructure/mq/KafkaConfig.java) |
 | Login and rate limiting | [MvcConfig](src/main/java/com/hmdp/config/MvcConfig.java) · [limiter/](src/main/java/com/hmdp/limiter/) |
 | Course assistant reference | [ai/](src/main/java/com/hmdp/ai/) contains a LangChain4j and Redis chat history example, disabled by default |
 

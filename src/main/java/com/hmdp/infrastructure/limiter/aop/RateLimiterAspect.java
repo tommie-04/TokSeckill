@@ -1,9 +1,9 @@
-package com.hmdp.limiter.aop;
+package com.hmdp.infrastructure.limiter.aop;
 
 // Applies annotation-driven rate limits using a Redis Lua script.
 
-import com.hmdp.limiter.annotation.RateLimiter;
-import com.hmdp.limiter.exception.RateLimitException;
+import com.hmdp.infrastructure.limiter.annotation.RateLimiter;
+import com.hmdp.infrastructure.limiter.exception.RateLimitException;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -40,7 +40,7 @@ public class RateLimiterAspect {
 
     static {
         SLIDING_WINDOW_SCRIPT = new DefaultRedisScript<>();
-        SLIDING_WINDOW_SCRIPT.setLocation(new ClassPathResource("limiter.lua"));
+        SLIDING_WINDOW_SCRIPT.setLocation(new ClassPathResource("lua/limiter.lua"));
         SLIDING_WINDOW_SCRIPT.setResultType(Long.class);
     }
 

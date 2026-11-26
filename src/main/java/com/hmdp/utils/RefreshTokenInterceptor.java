@@ -1,5 +1,7 @@
 package com.hmdp.utils;
 
+import com.hmdp.infrastructure.redis.RedisConstants;
+
 // Loads the user from Redis, refreshes the token lifetime, and clears thread-local state after the request.
 
 import cn.hutool.core.bean.BeanUtil;
@@ -13,8 +15,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
-import static com.hmdp.utils.RedisConstants.LOGIN_USER_TTL;
+import static com.hmdp.infrastructure.redis.RedisConstants.LOGIN_USER_KEY;
+import static com.hmdp.infrastructure.redis.RedisConstants.LOGIN_USER_TTL;
 
 public class RefreshTokenInterceptor implements HandlerInterceptor {
 

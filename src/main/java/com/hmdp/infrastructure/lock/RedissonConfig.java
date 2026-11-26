@@ -1,4 +1,4 @@
-package com.hmdp.config;
+package com.hmdp.infrastructure.lock;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;

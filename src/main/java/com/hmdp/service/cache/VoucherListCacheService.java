@@ -8,7 +8,7 @@ import cn.hutool.json.JSONUtil;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.hmdp.config.VoucherCacheProperties;
+import com.hmdp.infrastructure.cache.VoucherCacheProperties;
 import com.hmdp.entity.Voucher;
 import com.hmdp.mapper.VoucherMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import static com.hmdp.utils.RedisConstants.CACHE_VOUCHER_LIST_KEY;
+import static com.hmdp.infrastructure.redis.RedisConstants.CACHE_VOUCHER_LIST_KEY;
 
 /** Loads token-pack display metadata through the selected cache path. Inventory is checked by Lua. */
 @Slf4j

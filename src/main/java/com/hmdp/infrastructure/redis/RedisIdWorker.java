@@ -1,4 +1,4 @@
-package com.hmdp.utils;
+package com.hmdp.infrastructure.redis;
 
 // Generates IDs from a timestamp and a Redis-backed sequence.
 

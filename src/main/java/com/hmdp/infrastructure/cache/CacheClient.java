@@ -1,4 +1,6 @@
-package com.hmdp.utils;
+package com.hmdp.infrastructure.cache;
+
+import com.hmdp.infrastructure.redis.RedisConstants;
 
 // Reusable Redis cache helpers for pass-through and logical-expiration strategies.
 
@@ -16,8 +18,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static com.hmdp.utils.RedisConstants.CACHE_NULL_TTL;
-import static com.hmdp.utils.RedisConstants.LOCK_SHOP_KEY;
+import static com.hmdp.infrastructure.redis.RedisConstants.CACHE_NULL_TTL;
+import static com.hmdp.infrastructure.redis.RedisConstants.LOCK_SHOP_KEY;
 
 @Slf4j
 @Component

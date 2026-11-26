@@ -1,4 +1,4 @@
-package com.hmdp.limiter.annotation;
+package com.hmdp.infrastructure.limiter.annotation;
 
 import java.lang.annotation.*;
 

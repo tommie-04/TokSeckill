@@ -1,4 +1,4 @@
-package com.hmdp.consumer;
+package com.hmdp.infrastructure.mq;
 
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.service.IVoucherOrderService;
