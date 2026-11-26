@@ -1,6 +1,6 @@
 <div align="center">
 
-# TokenPack Flash Sale
+# TokenFlash
 
 [![中文](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87-1d624b)](README.md)
 [![English](https://img.shields.io/badge/README-English-2563eb)](README.en.md)
@@ -9,7 +9,7 @@
 
 Browse text, reasoning, and multimodal model packs, reserve one during a campaign, and check your order status.
 
-[![Build](https://github.com/tommie-04/CityPerks/actions/workflows/build.yml/badge.svg)](https://github.com/tommie-04/CityPerks/actions/workflows/build.yml)
+[![Build](https://github.com/tommie-04/TokenFlash/actions/workflows/build.yml/badge.svg)](https://github.com/tommie-04/TokenFlash/actions/workflows/build.yml)
 ![Java 17](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot 2.7.18](https://img.shields.io/badge/Spring_Boot-2.7.18-6DB33F?logo=springboot&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Lua-DC382D?logo=redis&logoColor=white)
@@ -31,21 +31,21 @@ The demo covers the pack catalog, reservation, and order creation. Payment, real
 
 | Module | Code entry point |
 | --- | --- |
-| Catalog and two-level caching | [TokenPackController](src/main/java/com/hmdp/tokenpack/controller/TokenPackController.java) → [TokenPackCatalogCache](src/main/java/com/hmdp/tokenpack/service/cache/TokenPackCatalogCache.java) |
-| Flash sale and order lookup | [TokenPackOrderController](src/main/java/com/hmdp/seckill/controller/TokenPackOrderController.java) → [TokenPackOrderServiceImpl](src/main/java/com/hmdp/seckill/service/impl/TokenPackOrderServiceImpl.java) → [seckill.lua](src/main/resources/lua/seckill.lua) |
-| Consumer, retries, and transaction | [OrderEventConsumer](src/main/java/com/hmdp/infrastructure/mq/OrderEventConsumer.java) · [KafkaConfig](src/main/java/com/hmdp/infrastructure/mq/KafkaConfig.java) |
-| Login and rate limiting | [MvcConfig](src/main/java/com/hmdp/config/MvcConfig.java) · [limiter/](src/main/java/com/hmdp/limiter/) |
-| Course assistant reference | [ai/](src/main/java/com/hmdp/ai/) contains a LangChain4j and Redis chat history example, disabled by default |
+| Catalog and two-level caching | [TokenPackController](src/main/java/com/tokenflash/tokenpack/controller/TokenPackController.java) → [TokenPackCatalogCache](src/main/java/com/tokenflash/tokenpack/service/cache/TokenPackCatalogCache.java) |
+| Flash sale and order lookup | [TokenPackOrderController](src/main/java/com/tokenflash/seckill/controller/TokenPackOrderController.java) → [TokenPackOrderServiceImpl](src/main/java/com/tokenflash/seckill/service/impl/TokenPackOrderServiceImpl.java) → [seckill.lua](src/main/resources/lua/seckill.lua) |
+| Consumer, retries, and transaction | [OrderEventConsumer](src/main/java/com/tokenflash/infrastructure/mq/OrderEventConsumer.java) · [KafkaConfig](src/main/java/com/tokenflash/infrastructure/mq/KafkaConfig.java) |
+| Login and rate limiting | [MvcConfig](src/main/java/com/tokenflash/config/MvcConfig.java) · [limiter/](src/main/java/com/tokenflash/infrastructure/limiter/) |
+| Course assistant reference | [ai/](src/main/java/com/tokenflash/ai/) contains a LangChain4j and Redis chat history example, disabled by default |
 
 ## Quick start
 
 Install JDK 17, Maven 3.6+, MySQL, Redis, Kafka, and Nginx. Use a fresh local database. The base SQL recreates the training tables in that database.
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE hmdp CHARACTER SET utf8mb4;"
-mysql -u root -p hmdp < src/main/resources/db/hmdp.sql
-mysql -u root -p hmdp < src/main/resources/db/token-packs.sql
-mysql -u root -p hmdp < src/main/resources/db/token-pack-demo.sql
+mysql -u root -p -e "CREATE DATABASE tokenflash CHARACTER SET utf8mb4;"
+mysql -u root -p tokenflash < src/main/resources/db/schema.sql
+mysql -u root -p tokenflash < src/main/resources/db/token-packs.sql
+mysql -u root -p tokenflash < src/main/resources/db/token-pack-demo.sql
 ```
 
 For an existing learning database, back it up and apply `token-packs.sql` once. If the unique index fails to build, check for duplicate `(user_id, voucher_id)` pairs. Demo fixtures use provider and pack IDs 101–103 and open a 30-day campaign upon import.
@@ -67,7 +67,7 @@ export TOKEN_PACK_CACHE_MODE=caffeine
 export APP_LOG_LEVEL=debug
 ./scripts/warm-token-pack.sh 101 102 103
 mvn -DskipTests package
-java -jar target/hm-dianping-0.0.1-SNAPSHOT.jar
+java -jar target/tokenflash-0.0.1-SNAPSHOT.jar
 ```
 
 Leave `REDIS_PASSWORD` empty if Redis does not require a password. The backend defaults to port `8081`, Redis DB 0 at `127.0.0.1:6379`, Kafka at `127.0.0.1:9092`, and the `mysql` catalog mode. See [application.yaml](src/main/resources/application.yaml). Match the warmup script's MySQL and Redis settings to the backend. The script sets missing stock keys and updates sale windows. Use a separate Redis database for the demo to isolate any flash-sale state from older versions.
@@ -89,4 +89,4 @@ The learning order is **Caffeine and Guava → Kafka acknowledgments, retries, a
 
 ## Credits
 
-Based on the [Heima Redis course](https://www.bilibili.com/video/BV1cr4y1671t), its [base code](https://github.com/cs001020/hmdp), and the [extended study materials](https://www.yuque.com/kdoxioc/qp0wtr/zvp8tfp6sunsglpt). Original author attribution is preserved in the source. The repository retains its historical name, CityPerks.
+Based on the [Heima Redis course](https://www.bilibili.com/video/BV1cr4y1671t), its [base code](https://github.com/cs001020/hmdp), and the [extended study materials](https://www.yuque.com/kdoxioc/qp0wtr/zvp8tfp6sunsglpt). Original author attribution is preserved in the source.

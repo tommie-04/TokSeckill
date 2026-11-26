@@ -1,4 +1,4 @@
-# TokenPack architecture
+# TokenFlash architecture
 
 [中文](architecture.md) · [English](architecture.en.md) · [README](../README.en.md)
 
@@ -39,10 +39,10 @@ Legacy package names, database tables, and routes make it easier to migrate an e
 ```text
 frontend/
   conf/                     Nginx and /api proxy
-  html/hmdp/                Catalog and legacy static assets
+  html/tokenflash/                Catalog and legacy static assets
 scripts/
   warm-token-pack.sh        Load sale windows and initial stock from MySQL
-src/main/java/com/hmdp/
+src/main/java/com/tokenflash/
   controller/               HTTP entry points
   service/cache/            L1/L2 catalog reads
   service/impl/             Reservations, Kafka publishing, order transaction
@@ -88,7 +88,7 @@ frontend/
       components/           Shared UI
     vite.config.ts
   conf/                     Nginx serves dist and proxies /api
-  html/hmdp/                Static demo during migration
+  html/tokenflash/                Static demo during migration
 src/main/                   Existing backend and migrations
 ```
 

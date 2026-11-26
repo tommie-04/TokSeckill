@@ -1,4 +1,4 @@
-# TokenPack 架构
+# TokenFlash 架构
 
 [中文](architecture.md) · [English](architecture.en.md) · [README](../README.md)
 
@@ -39,10 +39,10 @@ flowchart LR
 ```text
 frontend/
   conf/                     Nginx 与 /api 代理
-  html/hmdp/                 Token 包首页与课程静态资源
+  html/tokenflash/                 Token 包首页与课程静态资源
 scripts/
   warm-token-pack.sh         从 MySQL 预热活动窗口和库存
-src/main/java/com/hmdp/
+src/main/java/com/tokenflash/
   controller/                HTTP、鉴权后的请求入口
   service/cache/             目录 L1/L2 读取
   service/impl/              Lua 资格判定、Kafka 发布、订单事务
@@ -89,7 +89,7 @@ frontend/
       components/            跨页面复用组件
     vite.config.ts
   conf/                      Nginx 提供 dist、代理 /api
-  html/hmdp/                 Vue 迁移期间的静态演示
+  html/tokenflash/                 Vue 迁移期间的静态演示
 src/main/                    现有 Java 服务端与迁移脚本
 ```
 

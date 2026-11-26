@@ -1,4 +1,4 @@
--- One-time upgrade for an hmdp.sql schema or its existing installations.
+-- One-time upgrade for the schema.sql baseline or its existing installations.
 -- Resolve any duplicate (user_id, voucher_id) pairs before applying.
 ALTER TABLE tb_voucher_order
     ADD UNIQUE KEY uk_order_user_pack (user_id, voucher_id);

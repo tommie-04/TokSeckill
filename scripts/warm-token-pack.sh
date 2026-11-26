@@ -8,7 +8,7 @@ if (( $# == 0 )); then
 fi
 
 mysql_args=(--host="${MYSQL_HOST:-127.0.0.1}" --port="${MYSQL_PORT:-3306}"
-            --user="${MYSQL_USER:-root}" --database="${MYSQL_DATABASE:-hmdp}" --batch --skip-column-names)
+            --user="${MYSQL_USER:-root}" --database="${MYSQL_DATABASE:-tokenflash}" --batch --skip-column-names)
 redis_args=(-h "${REDIS_HOST:-127.0.0.1}" -p "${REDIS_PORT:-6379}" -n "${REDIS_DATABASE:-0}")
 
 if [[ -n "${REDIS_PASSWORD:-}" ]]; then

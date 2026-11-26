@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TokenFlash · 大模型额度秒杀</title>
+  <link rel="stylesheet" href="./css/token-pack.css">
+</head>
+<body>
+  <div id="catalog" v-cloak>
+    <header class="header">
+      <a href="/" class="brand">TokenFlash</a>
+      <a v-if="!signedIn" href="/login.html">登录</a>
+      <button v-else type="button" class="secondary" @click="signOut">退出登录</button>
+    </header>
+    <main>
+      <h1>大模型 Token 包秒杀</h1>
+      <p class="intro">浏览文本、推理和多模态模型的额度包。每个账号每款限领一份。</p>
+      <p v-if="loading" role="status">正在加载 Token 包…</p>
+      <p v-if="catalogError" role="alert">读取部分目录失败。<button class="secondary" @click="load">重试</button></p>
+      <p v-if="!loading && !catalogError && !packs.length" role="status">暂无 Token 包</p>
+      <div class="packs">
+        <article class="pack" v-for="pack in packs" :key="pack.id">
+          <p class="provider">{{ pack.provider }}</p>
+          <h2>{{ pack.title }}</h2>
+          <p class="intro">{{ pack.subTitle }}</p>
+          <p class="units">{{ formatUnits(pack.tokenUnits) }} <span>tokens</span></p>
+          <p class="price">{{ formatPrice(pack.payValue) }} <del>{{ formatPrice(pack.actualValue) }}</del></p>
+          <p>{{ pack.rules }} · 展示库存 {{ pack.stock }} 份</p>
+          <button type="button" :disabled="submitting !== null || !isOpen(pack)" @click="reserve(pack)">
+            {{ submitting === pack.id ? "正在提交…" : isOpen(pack) ? "参与秒杀" : "活动已结束或未开始" }}
+          </button>
+        </article>
+      </div>
+      <section v-if="orderId || message" class="result" aria-live="polite">
+        <p v-if="orderId">订单编号 <strong>{{ orderId }}</strong></p>
+        <p>{{ message }}</p>
+        <button class="secondary" v-if="orderId" type="button" :disabled="checking" @click="checkOrder">
+          刷新订单状态
+        </button>
+      </section>
+      <p class="note">学习演示。价格为展示数据，平台记录秒杀订单，实际支付和模型额度发放留作后续功能。</p>
+    </main>
+  </div>
+  <script src="./js/vue.js"></script>
+  <script src="./js/axios.min.js"></script>
+  <script src="./js/common.js"></script>
+  <script src="./js/token-pack.js"></script>
+</body>
+</html>

@@ -8,10 +8,10 @@
         <version>2.7.18</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.hmdp</groupId>
-    <artifactId>hm-dianping</artifactId>
+    <groupId>com.tokenflash</groupId>
+    <artifactId>tokenflash</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>TokenPack Flash Sale</name>
+    <name>TokenFlash</name>
     <description>LLM token-pack catalog and flash sale</description>
     <properties>
         <java.version>17</java.version>
@@ -33,7 +33,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <!-- 确保pom.xml中包含正确的Kafka依赖 -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>

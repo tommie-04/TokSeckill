@@ -2,10 +2,10 @@ server:
   port: ${SERVER_PORT:8081}
 spring:
   application:
-    name: token-pack-flash-sale
+    name: tokenflash
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: "${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true}"
+    url: "${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/${MYSQL_DATABASE:tokenflash}?useSSL=false&serverTimezone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true}"
     username: ${MYSQL_USER:root}
     password: "${MYSQL_PASSWORD:}"
   redis:
@@ -41,30 +41,30 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.value.default.type: com.hmdp.seckill.entity.TokenPackOrder
+        spring.json.value.default.type: com.tokenflash.seckill.entity.TokenPackOrder
         spring.json.use.type.headers: false
-        spring.json.trusted.packages: com.hmdp.seckill.entity
+        spring.json.trusted.packages: com.tokenflash.seckill.entity
     listener:
       auto-startup: ${KAFKA_LISTENER_ENABLED:true}
       ack-mode: record
 
 mybatis-plus:
-  type-aliases-package: com.hmdp.*.entity
+  type-aliases-package: com.tokenflash.*.entity
 
 logging:
   level:
-    com.hmdp: ${APP_LOG_LEVEL:info}
+    com.tokenflash: ${APP_LOG_LEVEL:info}
 
 kafka:
   backoff:
     interval: 1000
     max_failure: 3
 
-hmdp:
+tokenflash:
   kafka:
     order-topic: ${KAFKA_ORDER_TOPIC:seckill-voucher-order}
   cache:
-    voucher-list:
+    token-pack-list:
       mode: ${TOKEN_PACK_CACHE_MODE:mysql}
       refresh-after-write: 5s
       expire-after-write: 10m
