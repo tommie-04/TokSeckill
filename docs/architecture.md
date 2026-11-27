@@ -86,13 +86,13 @@ TokenFlash/
 └── .github/workflows/build.yml
 ```
 
-## Vue 全栈方案
+## React 全栈方案
 
 ```mermaid
 flowchart LR
     U[用户浏览器] -->|HTTPS| N[Nginx]
-    N -->|"静态文件 / SPA 回退"| V["Vue 3 + TypeScript + Vite dist"]
-    V -->|"同源 /api"| N
+    N -->|"静态文件 / SPA 回退"| Web["React + TypeScript SPA"]
+    Web -->|"同源 /api"| N
     N -->|"代理到 :8081"| S["Spring Boot / MVC"]
     S --> L["Caffeine L1"]
     S --> R[(Redis)]
@@ -106,24 +106,24 @@ flowchart LR
 
 ```text
 frontend/
-  app/                       拟新增 Vue 3 应用
+  app/                       拟新增 React + TypeScript 应用
     src/
       api/                   HTTP 客户端、目录和订单接口
       routes/                目录、登录、订单详情路由
-      stores/                Pinia 会话状态
+      auth/                  登录会话与 React Context
       features/
         catalog/             额度包展示
         orders/              秒杀反馈、订单状态和轮询
       components/            跨页面复用组件
     vite.config.ts
   conf/                      Nginx 提供 dist、代理 /api
-  html/tokenflash/                 Vue 迁移期间的静态演示
+  html/tokenflash/           迁移期间的静态演示
 src/main/                    现有 Java 服务端与迁移脚本
 ```
 
 1. 先确定三条 API 的字段和错误语义。前端订单号使用 `string`，状态区分已创建与暂未查到。
-2. 用 Vue 3、Vite、TypeScript、Vue Router、Pinia 实现目录、登录和订单页。新页面使用 Composition API。开发环境由 Vite 代理 `/api`。
-3. 构建 `dist/` 后交给 Nginx，静态路由使用 `try_files $uri $uri/ /index.html`，`/api/` 转发到 Java 后端。用端到端测试走一遍登录、抢购和查询。
+2. 用 React、TypeScript 和 React Router 实现目录、登录和订单页。用 React Context 共享登录会话，组件和业务逻辑使用 Hooks。开发环境由 Vite 代理 `/api`。
+3. 用 Vite 构建 `frontend/app/dist/` 后交给 Nginx，静态路由使用 `try_files $uri $uri/ /index.html`，`/api/` 转发到 Java 后端。用端到端测试走一遍登录、抢购和查询。
 4. 保留 Spring Boot 单体与单独的 Kafka 消费线程。要扩展时先测量目录命中率、Kafka lag 和 MySQL 事务延迟，再判断是否拆分。
 
-前端与后端保持同源，减少部署时的跨域配置。缓存与消息队列继续由后端负责。独立 Vue 工程、生产部署和客服工具均在后续阶段。[Vue 官方快速开始](https://vuejs.org/guide/quick-start.html)
+前端与后端保持同源，减少部署时的跨域配置。缓存与消息队列继续由后端负责。React 前端、生产部署和客服工具属于后续阶段。[React TypeScript 指南](https://react.dev/learn/typescript) · [Vite 指南](https://vite.dev/guide/) · [React Router 指南](https://reactrouter.com/start/declarative/installation)

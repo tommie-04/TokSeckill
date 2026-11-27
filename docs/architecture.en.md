@@ -86,13 +86,13 @@ TokenFlash/
 └── .github/workflows/build.yml
 ```
 
-## Vue full-stack plan
+## React full-stack plan
 
 ```mermaid
 flowchart LR
     Browser -->|HTTPS| Nginx
-    Nginx -->|"Static files / SPA fallback"| Vue["Vue 3 + TypeScript + Vite dist"]
-    Vue -->|"Same-origin /api"| Nginx
+    Nginx -->|"Static files / SPA fallback"| Web["React + TypeScript SPA"]
+    Web -->|"Same-origin /api"| Nginx
     Nginx -->|"Reverse proxy :8081"| Boot["Spring Boot MVC"]
     Boot --> Caffeine
     Boot --> Redis[(Redis)]
@@ -105,24 +105,24 @@ flowchart LR
 
 ```text
 frontend/
-  app/                      Proposed Vue 3 application
+  app/                      Proposed React + TypeScript application
     src/
       api/                  HTTP client and domain endpoints
       routes/               Catalog, login, and order details
-      stores/               Pinia session state
+      auth/                 Sign-in session and React Context
       features/
         catalog/            Pack cards and filters
         orders/             Reservation feedback and status polling
       components/           Shared UI
     vite.config.ts
   conf/                     Nginx serves dist and proxies /api
-  html/tokenflash/                Static demo during migration
+  html/tokenflash/          Static demo during migration
 src/main/                   Existing backend and migrations
 ```
 
 1. Define the response types for catalog, reservation, and order status. Keep order IDs as strings and distinguish an existing order from an unknown or pending order.
-2. Build the catalog, login, and order pages with Vue 3, Vite, TypeScript, Vue Router, and Pinia. Use the Composition API. Proxy `/api` during local development.
-3. Serve `dist/` with Nginx, using `try_files $uri $uri/ /index.html` for browser routes and a dedicated `/api/` proxy to Spring Boot. Verify sign-in, reservation, and order lookup as a single flow.
+2. Build the catalog, login, and order pages with React, TypeScript, and React Router. Share the sign-in session through React Context and use Hooks for component and feature logic. Proxy `/api` through Vite during local development.
+3. Build `frontend/app/dist/` with Vite and serve it with Nginx, using `try_files $uri $uri/ /index.html` for browser routes and a dedicated `/api/` proxy to Spring Boot. Verify sign-in, reservation, and order lookup as a single flow.
 4. Keep the backend as a Spring Boot monolith with a Kafka listener. Use cache hit ratios, consumer lag, and transaction latency to guide future scaling decisions.
 
-The standalone Vue app, production deployment, and assistant tools are future work. [Vue Quick Start](https://vuejs.org/guide/quick-start.html)
+The React frontend, production deployment, and assistant tools are future work. [React TypeScript guide](https://react.dev/learn/typescript) · [Vite guide](https://vite.dev/guide/) · [React Router guide](https://reactrouter.com/start/declarative/installation)

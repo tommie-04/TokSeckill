@@ -17,7 +17,7 @@ Browse text, reasoning, and multimodal model packs, reserve one during a campaig
 ![Caffeine](https://img.shields.io/badge/Caffeine-L1_Cache-795548)
 ![MySQL](https://img.shields.io/badge/MySQL-MyBatis--Plus-4479A1?logo=mysql&logoColor=white)
 
-[Architecture](docs/architecture.en.md) · [Quick start](#quick-start) · [Learning and interviews](docs/learning-guide.md) · [Vue full-stack plan](docs/architecture.en.md#vue-full-stack-plan)
+[Architecture](docs/architecture.en.md) · [Quick start](#quick-start) · [Learning and interviews](docs/learning-guide.md) · [React full-stack plan](docs/architecture.en.md#react-full-stack-plan)
 
 </div>
 
@@ -158,7 +158,7 @@ Open the [local catalog](http://127.0.0.1:8080/). Choose a pack, sign in, submit
 
 The Kafka listener commits offsets after each record is handled. It retries failures up to three times at one-second intervals and logs exhausted records. The Redis reservation, Kafka publication, and MySQL transaction span separate systems. Uncertain publication or exhausted retries leave reservations for reconciliation. Durable recovery, replay, and compensation are future work.
 
-The learning order is **Caffeine and Guava → Kafka acknowledgments, retries, and idempotency → Vue 3 frontend → Function Calling**. The course assistant is available under a local reference profile. Future token-pack tools start with read-only catalog queries. [Learning and interview guide, in Chinese](docs/learning-guide.md)
+The learning order is **Caffeine and Guava → Kafka acknowledgments, retries, and idempotency → React + TypeScript frontend → Function Calling**. The course assistant is available under a local reference profile. Future token-pack tools start with read-only catalog queries. [Learning and interview guide, in Chinese](docs/learning-guide.md)
 
 ## Credits
 

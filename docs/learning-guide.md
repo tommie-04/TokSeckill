@@ -32,9 +32,9 @@
 
 口述示例：“接口把持久化订单和扣库存放到 Kafka 消费侧。MySQL 事务提交后才成功结束消费方法。遇到重复投递，通过用户与包的唯一约束及事务保证同一订单只扣一次库存。”
 
-## 3. Vue 3 与 Nginx
+## 3. React + TypeScript 与 Nginx
 
-先实现目录、登录、秒杀反馈和订单确认，沿用 Java API。开发使用 Vite 代理，部署时 Nginx 提供构建产物并转发 `/api`。目录与结构见[架构文档](architecture.md#vue-全栈方案)。
+用 React、TypeScript 和 React Router 实现目录、登录、秒杀反馈和订单确认，沿用 Java API。开发使用 Vite 代理，部署时 Nginx 提供构建产物并转发 `/api`。目录与结构见[架构文档](architecture.md#react-全栈方案)。
 
 ## 4. Function Calling
 
@@ -46,4 +46,4 @@
 - 将创建订单和数据库扣库存移至 Kafka 消费侧，通过记录级 offset 提交、有限重试、数据库事务与业务唯一索引处理重复消费。
 - 实现基于 Caffeine 与 Redis 的 Token 包目录缓存，支持配置切换 MySQL、Redis、两级缓存三种路径。
 
-压测、跨系统补偿、Vue SPA 与客服上线能力等实际完成后，再补进简历。
+压测、跨系统补偿、React SPA 与客服上线能力等实际完成后，再补进简历。

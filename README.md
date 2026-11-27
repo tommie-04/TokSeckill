@@ -17,7 +17,7 @@
 ![Caffeine](https://img.shields.io/badge/Caffeine-L1_Cache-795548)
 ![MySQL](https://img.shields.io/badge/MySQL-MyBatis--Plus-4479A1?logo=mysql&logoColor=white)
 
-[系统架构](docs/architecture.md) · [快速开始](#快速开始) · [学习与面试](docs/learning-guide.md) · [Vue 全栈方案](docs/architecture.md#vue-全栈方案)
+[系统架构](docs/architecture.md) · [快速开始](#快速开始) · [学习与面试](docs/learning-guide.md) · [React 全栈方案](docs/architecture.md#react-全栈方案)
 
 </div>
 
@@ -158,7 +158,7 @@ nginx -p "$PWD/frontend/" -c conf/nginx.conf
 
 Kafka 按记录提交消费位点，异常默认间隔 1 秒重试 3 次，耗尽后记录错误。Redis 预扣、Kafka 发布、MySQL 落库分别跨不同系统。发布结果不明和消费重试耗尽时，保留待核对的预扣状态。后续再加入持久化失败记录、重放与补偿。课程客服保留在本地参考 profile 中，后续先做只读目录查询，再讨论用户身份、会话隔离和工具授权。
 
-学习顺序为 **Caffeine 与 Guava → Kafka Ack、重试与幂等 → Vue 3 前端 → Function Calling**。[学习与面试](docs/learning-guide.md)
+学习顺序为 **Caffeine 与 Guava → Kafka Ack、重试与幂等 → React + TypeScript 前端 → Function Calling**。[学习与面试](docs/learning-guide.md)
 
 ## 来源
 
